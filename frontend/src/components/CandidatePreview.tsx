@@ -18,7 +18,12 @@ export default function CandidatePreview({
     return (
       <div className="missing-preview">
         <span className="panel-kicker">PREVIEW UNAVAILABLE</span>
-        <p>No composite preview is mapped for this candidate.</p>
+        <h3>Preview unavailable for this candidate.</h3>
+        <p>Only top-ranked demo previews were supplied.</p>
+        <p>
+          This candidate still comes from the fusion CSV and remains available for map review,
+          scoring, filtering and manual status notes.
+        </p>
       </div>
     );
   }

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const dataDir = join(root, "public", "data");
+const backtrackingDir = join(dataDir, "backtracking");
 const srcDir = join(root, "src");
 
 function parseCsv(text) {
@@ -53,11 +54,21 @@ function parseCsv(text) {
 
 const csvRows = parseCsv(readFileSync(join(dataDir, "fusion_candidate_rankings.csv"), "utf8"));
 const manifest = JSON.parse(readFileSync(join(dataDir, "candidate_assets.json"), "utf8"));
+const hourlyParticles = parseCsv(readFileSync(join(backtrackingDir, "hourly_probability_points.csv"), "utf8"));
+const attributionRows = parseCsv(readFileSync(join(backtrackingDir, "source_attribution.csv"), "utf8"));
 const sourceText = [
   "components/CandidateQueue.tsx",
   "components/CandidateInspector.tsx",
   "components/CandidateMap.tsx",
+  "components/BacktrackingPrototypeMap.tsx",
+  "components/SourceAttributionPanel.tsx",
   "services/fusionDataService.ts",
+].map((file) => readFileSync(join(srcDir, file), "utf8")).join("\n");
+const backtrackingSourceText = [
+  "components/BacktrackingPrototypeMap.tsx",
+  "components/SourceAttributionPanel.tsx",
+  "components/AttributionConceptWorkspace.tsx",
+  "services/backtrackingService.ts",
 ].map((file) => readFileSync(join(srcDir, file), "utf8")).join("\n");
 
 test("CSV loads the complete held-out candidate table", () => {
@@ -113,4 +124,38 @@ test("fusion score is presented as a ranking score, not a percentage confidence"
   assert.doesNotMatch(sourceText, /finalFusionScore\s*\*\s*100/);
   assert.doesNotMatch(sourceText, /Fusion Ranking Score.*%/);
   assert.doesNotMatch(sourceText, /Oil Confidence|Detection Confidence|Probability of Oil|170% confidence/i);
+});
+
+test("backtracking prototype CSVs are present and separate from SAR candidates", () => {
+  for (const file of [
+    "hourly_probability_points.csv",
+    "probability_points.csv",
+    "backtracked_trajectory.csv",
+    "vessel_tracks.csv",
+    "source_attribution.csv",
+    "spill_location.csv",
+    "environment_wind_current.csv",
+  ]) {
+    assert.ok(statSync(join(backtrackingDir, file)).size > 0, `${file} exists`);
+  }
+
+  assert.notEqual(hourlyParticles[0].longitude, csvRows[0].longitude);
+  assert.doesNotMatch(backtrackingSourceText, /candidateId/);
+});
+
+test("backtracking particles have time and likelihood suitable for animation", () => {
+  const times = new Set(hourlyParticles.map((row) => row.time));
+  assert.ok(times.size > 1, "multiple particle timestamps are available");
+
+  for (const row of hourlyParticles) {
+    assert.ok(Number(row.latitude) >= -90 && Number(row.latitude) <= 90);
+    assert.ok(Number(row.longitude) >= -180 && Number(row.longitude) <= 180);
+    assert.ok(Number(row.likelihood) >= 0 && Number(row.likelihood) <= 1);
+  }
+});
+
+test("source attribution copy uses scenario score language", () => {
+  assert.ok(attributionRows.length > 0);
+  assert.match(sourceText, /Scenario Score/);
+  assert.doesNotMatch(sourceText, /Attribution confidence|Vessel confidence/i);
 });

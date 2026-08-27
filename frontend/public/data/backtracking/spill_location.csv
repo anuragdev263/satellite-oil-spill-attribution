@@ -1,0 +1,2 @@
+case_id,latitude,longitude,observation_time,expected_vessel
+TEST_04,19.6,70.095,2026-08-20 12:00:00,V004

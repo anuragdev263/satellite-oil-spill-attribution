@@ -3,7 +3,7 @@ import { LngLatBounds, Map, NavigationControl, Popup, setWorkerUrl } from "mapli
 import type { GeoJSONSource, MapLayerMouseEvent } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { FeatureCollection, Point } from "geojson";
+import type { Feature, FeatureCollection, Point } from "geojson";
 import type { Candidate } from "../types/candidates";
 import { formatCoordinate, formatDecimal } from "../utils/format";
 
@@ -29,12 +29,25 @@ export default function CandidateMap({
     onSelectRef.current = onSelect;
   }, [onSelect]);
 
-  const candidateFeatures = useMemo<FeatureCollection<Point>>(() => {
+  const candidatePatchFeatures = useMemo<FeatureCollection<Point>>(() => {
     const maxScore = Math.max(...candidates.map((candidate) => candidate.finalFusionScore), 1);
 
     return {
       type: "FeatureCollection",
-      features: candidates.map((candidate) => ({
+      features: candidates.flatMap((candidate) =>
+        buildCandidatePatchFeatures(
+          candidate,
+          candidate.finalFusionScore / maxScore,
+          candidate.candidateId === selectedCandidateId
+        )
+      ),
+    };
+  }, [candidates, selectedCandidateId]);
+
+  const candidateLabelFeatures = useMemo<FeatureCollection<Point>>(
+    () => ({
+      type: "FeatureCollection",
+      features: candidates.map((candidate): Feature<Point> => ({
         type: "Feature",
         geometry: {
           type: "Point",
@@ -47,14 +60,14 @@ export default function CandidateMap({
           scene: candidate.scene,
           acquisitionDate: candidate.acquisitionDate,
           score: candidate.finalFusionScore,
-          scoreRatio: candidate.finalFusionScore / maxScore,
           selected: candidate.candidateId === selectedCandidateId,
           latitude: candidate.latitude,
           longitude: candidate.longitude,
         },
       })),
-    };
-  }, [candidates, selectedCandidateId]);
+    }),
+    [candidates, selectedCandidateId]
+  );
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
@@ -104,46 +117,89 @@ export default function CandidateMap({
         },
       });
 
-      map.addSource("candidates", {
+      map.addSource("candidate-patches", {
         type: "geojson",
-        data: candidateFeatures,
+        data: candidatePatchFeatures,
+      });
+
+      map.addSource("candidate-label-points", {
+        type: "geojson",
+        data: candidateLabelFeatures,
       });
 
       map.addLayer({
-        id: "candidate-points",
+        id: "candidate-patch-glow",
         type: "circle",
-        source: "candidates",
+        source: "candidate-patches",
         paint: {
           "circle-radius": [
-            "case",
-            ["==", ["get", "selected"], true],
-            10,
-            ["+", 4, ["*", ["get", "scoreRatio"], 8]],
+            "interpolate",
+            ["linear"],
+            ["get", "scoreRatio"],
+            0,
+            ["*", ["get", "size"], 1.2],
+            1,
+            ["*", ["get", "size"], 1.9],
           ],
           "circle-color": [
             "case",
             ["==", ["get", "selected"], true],
-            "#FF6B6B",
-            ["==", ["get", "split"], "test"],
+            "#FF7B50",
             "#69B7D1",
-            "#D83B8C",
           ],
-          "circle-stroke-color": "#061419",
-          "circle-stroke-width": ["case", ["==", ["get", "selected"], true], 3, 1.5],
-          "circle-opacity": 0.9,
+          "circle-opacity": [
+            "case",
+            ["==", ["get", "selected"], true],
+            ["*", ["get", "opacity"], 0.42],
+            ["*", ["get", "opacity"], 0.2],
+          ],
+          "circle-blur": 0.72,
+        },
+      });
+
+      map.addLayer({
+        id: "candidate-patch-particles",
+        type: "circle",
+        source: "candidate-patches",
+        paint: {
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["get", "scoreRatio"],
+            0,
+            ["get", "size"],
+            1,
+            ["*", ["get", "size"], 1.32],
+          ],
+          "circle-color": [
+            "case",
+            ["==", ["get", "selected"], true],
+            "#FF8A54",
+            "#75C9E8",
+          ],
+          "circle-opacity": [
+            "case",
+            ["==", ["get", "selected"], true],
+            ["interpolate", ["linear"], ["get", "opacity"], 0, 0.16, 1, 1],
+            ["get", "opacity"],
+          ],
+          "circle-stroke-color": ["case", ["==", ["get", "selected"], true], "#3b100c", "#061419"],
+          "circle-stroke-width": ["case", ["==", ["get", "selected"], true], 0.65, 0.35],
         },
       });
 
       map.addLayer({
         id: "candidate-labels",
         type: "symbol",
-        source: "candidates",
+        source: "candidate-label-points",
         layout: {
           "text-field": ["concat", ["upcase", ["get", "split"]], " #", ["to-string", ["get", "rank"]]],
           "text-size": 10,
-          "text-offset": [0, 1.35],
+          "text-offset": [0, 1.75],
           "text-anchor": "top",
           "text-font": ["Metropolis Regular", "sans-serif"],
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
         },
         paint: {
           "text-color": "#d8e4e8",
@@ -152,11 +208,11 @@ export default function CandidateMap({
         },
       });
 
-      map.on("click", "candidate-points", handleMapClick);
-      map.on("mouseenter", "candidate-points", () => {
+      map.on("click", "candidate-patch-particles", handleMapClick);
+      map.on("mouseenter", "candidate-patch-particles", () => {
         map.getCanvas().style.cursor = "pointer";
       });
-      map.on("mouseleave", "candidate-points", () => {
+      map.on("mouseleave", "candidate-patch-particles", () => {
         map.getCanvas().style.cursor = "";
       });
 
@@ -173,10 +229,12 @@ export default function CandidateMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
-    const source = map.getSource("candidates") as GeoJSONSource | undefined;
-    source?.setData(candidateFeatures);
+    const patchSource = map.getSource("candidate-patches") as GeoJSONSource | undefined;
+    const labelSource = map.getSource("candidate-label-points") as GeoJSONSource | undefined;
+    patchSource?.setData(candidatePatchFeatures);
+    labelSource?.setData(candidateLabelFeatures);
     fitMapToCandidates(map, candidates);
-  }, [candidateFeatures, candidates]);
+  }, [candidatePatchFeatures, candidateLabelFeatures, candidates]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -223,6 +281,9 @@ export default function CandidateMap({
         <div className="legend-item">
           <span>Relative review priority - not probability.</span>
         </div>
+        <div className="legend-item">
+          <span>Candidate patch marker: stylized tile-centre symbol, not georeferenced slick polygon.</span>
+        </div>
       </div>
     </section>
   );
@@ -253,6 +314,64 @@ export default function CandidateMap({
       )
       .addTo(mapRef.current!);
   }
+}
+
+function buildCandidatePatchFeatures(
+  candidate: Candidate,
+  scoreRatio: number,
+  selected: boolean
+): Feature<Point>[] {
+  const seed = hashString(candidate.candidateId);
+  const particleCount = 6 + (seed % 9);
+  const compactScale = 0.0019 + Math.min(1, scoreRatio) * 0.0009;
+  const features: Feature<Point>[] = [];
+
+  for (let index = 0; index < particleCount; index += 1) {
+    const angle = seededUnit(seed, index * 7 + 1) * Math.PI * 2;
+    const radius = (0.2 + seededUnit(seed, index * 7 + 2) * 0.95) * compactScale;
+    const stretch = 0.55 + seededUnit(seed, index * 7 + 3) * 0.65;
+    const lngOffset = Math.cos(angle) * radius * stretch;
+    const latOffset = Math.sin(angle) * radius * (1.35 - stretch * 0.35);
+    const size = 1.45 + seededUnit(seed, index * 7 + 4) * 2.3;
+    const opacity = 0.36 + seededUnit(seed, index * 7 + 5) * 0.38 + scoreRatio * 0.16;
+
+    features.push({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [candidate.longitude + lngOffset, candidate.latitude + latOffset],
+      },
+      properties: {
+        candidateId: candidate.candidateId,
+        rank: candidate.rank,
+        split: candidate.split,
+        scene: candidate.scene,
+        acquisitionDate: candidate.acquisitionDate,
+        score: candidate.finalFusionScore,
+        scoreRatio,
+        selected,
+        size,
+        opacity: Math.min(0.94, opacity),
+      },
+    });
+  }
+
+  return features;
+}
+
+function hashString(value: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function seededUnit(seed: number, salt: number): number {
+  let value = seed + Math.imul(salt + 1, 374761393);
+  value = Math.imul(value ^ (value >>> 13), 1274126177);
+  return ((value ^ (value >>> 16)) >>> 0) / 4294967295;
 }
 
 function fitMapToCandidates(map: Map, candidates: Candidate[]): void {

@@ -61,7 +61,7 @@ export default function CandidateQueue({
                 <strong>#{String(candidate.rank).padStart(2, "0")}</strong>
                 <span>{candidate.acquisitionDate}</span>
                 <ModeBadge tone={candidate.asset ? "observed" : "warning"}>
-                  {candidate.asset ? "Preview" : "No Preview"}
+                  {candidate.asset ? "Preview" : "No preview"}
                 </ModeBadge>
               </div>
               <div className="candidate-row-title">

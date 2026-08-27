@@ -2,6 +2,8 @@
 
 OilSpill Intelligence is a React, TypeScript and MapLibre review console for the SIH 2026 SAR oil-spill prototype. The default workspace is Detection Review, a data-backed candidate slick review queue. The Source Attribution workspace is preserved as a synthetic concept demo only.
 
+The Source Attribution workspace can load the uploaded backtracking prototype CSVs from `public/data/backtracking/`. That data is explicitly labelled "Backtracking Prototype / Synthetic Attribution Data" and is not linked to the SAR Detection Review candidates.
+
 ## Current Pipeline
 
 The real supplied pipeline is:
@@ -92,7 +94,8 @@ Reviewer notes, optional reviewer name and updated timestamp persist in localSto
 - CNN Test F1 is 0.324, Precision 0.222, Recall 0.600, AUC-ROC 0.557.
 - U-Net Test Dice is 0.0137, Precision 0.0077, Recall 0.0626 at threshold 0.20.
 - Candidate previews are image-space composites, not georeferenced polygons.
-- The repository does not include AIS positions, AIS tracks, drift fields or source-attribution outputs.
+- The repository does not include real AIS positions, real AIS tracks, operational drift fields or production source-attribution outputs.
+- The backtracking prototype CSVs are synthetic/demo source-attribution data and do not match the SAR fusion candidate coordinates or case linkage.
 
 ## Future Backend Integration
 

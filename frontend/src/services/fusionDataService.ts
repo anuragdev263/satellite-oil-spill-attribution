@@ -210,7 +210,7 @@ function parseCandidateCsv(
 
     const asset = assetsByCandidate.get(candidateId);
     if (asset && (asset.split !== split || asset.rank !== rank || asset.tileName !== tileName)) {
-      throw new Error(`Asset manifest mismatch for ${candidateId}.`);
+      throw new Error(`Asset manifest is inconsistent for ${candidateId}.`);
     }
     if (!asset && rank <= 12) {
       warnings.push(`No preview asset is available for ${split} rank ${rank}.`);

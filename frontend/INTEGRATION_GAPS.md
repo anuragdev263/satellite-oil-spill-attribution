@@ -19,3 +19,19 @@ Missing inputs and outputs:
 | End-to-end case linkage | Connecting SAR candidates to vessel/drift cases | Not supplied |
 
 The existing Source Attribution workspace uses synthetic demo data only. It must not be interpreted as output from the supplied SAR fusion run.
+
+## Backtracking Prototype Supporting Outputs
+
+The uploaded backtracking GIS archive also includes QGIS project, GeoPackage and GeoTIFF outputs such as:
+
+- `oil_spill_gis.qgz`
+- `final_high_risk_zone.gpkg`
+- `high_probability_zone.gpkg`
+- `oil_spill_results.gpkg`
+- `probability_heatmap_utm43.gpkg`
+- `final_kde.tif`
+- `final_probability.tif`
+- `high_probability_zone.tif`
+- `kde_test*.tif`
+
+These are documented as QGIS-only supporting outputs for now. The current frontend uses the CSV files only. GeoPackage or GeoTIFF layers should be converted to web-friendly GeoJSON, vector tiles, raster tiles, or Cloud Optimized GeoTIFF workflows only after the frontend has explicit support and styling rules for those formats.
