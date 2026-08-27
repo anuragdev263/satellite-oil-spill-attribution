@@ -278,34 +278,53 @@
 }
 
 .vessel-card {
-  display: grid;
-  grid-template-columns: 35px 1fr 45px;
-  gap: 10px;
-  padding: 13px;
+  padding: 14px 16px;
   border: 1px solid #173039;
   background: #091A20;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
 }
 
 .vessel-card:hover {
   border-color: #496873;
 }
 
+.vessel-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
 .vessel-rank {
+  flex-shrink: 0;
+  width: 22px;
   color: #7c9aa3;
   font-size: 10px;
+  padding-top: 2px;
+}
+
+.vessel-main {
+  flex: 1 1 auto;
+  min-width: 0; /* required for text-overflow to work inside flex */
 }
 
 .vessel-name {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #d8e4e8;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .vessel-meta {
   margin-top: 4px;
   font-size: 8px;
   color: #496873;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .vessel-progress,
@@ -314,6 +333,7 @@
   height: 3px;
   margin-top: 10px;
   background: #102A31;
+  width: 100%;
 }
 
 .vessel-progress div,
@@ -330,6 +350,8 @@
 }
 
 .vessel-score {
+  flex-shrink: 0;
+  min-width: 42px;
   text-align: right;
 }
 
@@ -337,11 +359,22 @@
   display: block;
   font-size: 14px;
   color: #D6A94A;
+  white-space: nowrap;
 }
 
 .vessel-score span {
   font-size: 7px;
   color: #7c9aa3;
+  letter-spacing: 0.06em;
+}
+
+.candidate-details {
+  animation: fadeInDetails 0.15s ease-in-out;
+}
+
+@keyframes fadeInDetails {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* =========================

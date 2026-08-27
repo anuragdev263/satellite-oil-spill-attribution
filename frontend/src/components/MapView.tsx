@@ -1,26 +1,204 @@
 import React, { useEffect, useRef } from "react";
 import { Map, NavigationControl, Popup, setWorkerUrl } from "maplibre-gl";
-import type { MapLayerMouseEvent } from "maplibre-gl";
+import type { MapLayerMouseEvent, GeoJSONSource } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { FeatureCollection, Feature, Polygon, Point, LineString } from "geojson";
 
 setWorkerUrl(workerUrl);
 
-interface MapViewProps {
-  caseData?: any;
+export interface Vessel {
+  rank: number;
+  name: string;
+  mmsi: string;
+  imo: string;
+  type: string;
+  flag: string;
+  latitude: number;
+  longitude: number;
+  score: number;
 }
 
-export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
+export interface Evidence {
+  label: string;
+  score: number;
+  description: string;
+}
+
+export interface CaseData {
+  caseId: string;
+  status: string;
+  region: string;
+  observation: {
+    time: string;
+  };
+  slick: {
+    areaKm2: number;
+    oilConfidence: number;
+  };
+  sourceRegion: {
+    latitude: number;
+    longitude: number;
+    confidence: number;
+  };
+  vessels: Vessel[];
+  evidenceChain: Evidence[];
+  backtrack: { hoursAgo: number }[];
+  forwardDrift: { hoursAhead: number }[];
+}
+
+export interface FlyToRequest {
+  mmsi: string;
+  token: number;
+}
+
+export interface MapViewProps {
+  caseData?: CaseData;
+  selectedVesselMmsi?: string | null;
+  selectedSpillId?: number | null;
+  selectedTimeOffset?: number;
+  simulatedTrajectory?: [number, number][] | null;
+  flyToRequest?: FlyToRequest | null;
+  onVesselSelect?: (mmsi: string | null) => void;
+  onSpillSelect?: (id: number | null) => void;
+}
+
+export const MapView: React.FC<MapViewProps> = ({
+  caseData,
+  selectedVesselMmsi = null,
+  selectedSpillId = null,
+  selectedTimeOffset = 0,
+  simulatedTrajectory = null,
+  flyToRequest = null,
+  onVesselSelect,
+  onSpillSelect,
+}) => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
+
+  // Tracks the real on-map coordinates for each vessel name, populated once
+  // the vessels layer is added. Used so VIEW TRACK flies to where the
+  // marker actually is, not just an arbitrary source coordinate.
+  const vesselCoordsRef = useRef<Record<string, [number, number]>>({});
+
+  const onVesselSelectRef = useRef(onVesselSelect);
+  const onSpillSelectRef = useRef(onSpillSelect);
+
+  useEffect(() => {
+    onVesselSelectRef.current = onVesselSelect;
+  }, [onVesselSelect]);
+
+  useEffect(() => {
+    onSpillSelectRef.current = onSpillSelect;
+  }, [onSpillSelect]);
+
+  const applySelectionStyles = () => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const selectedVesselName =
+      caseData?.vessels?.find((v) => v.mmsi === selectedVesselMmsi)?.name || null;
+
+    if (map.getLayer("vessels")) {
+      if (selectedVesselName) {
+        map.setPaintProperty("vessels", "circle-radius", [
+          "case",
+          ["==", ["get", "name"], selectedVesselName],
+          8,
+          3.5,
+        ]);
+        map.setPaintProperty("vessels", "circle-opacity", [
+          "case",
+          ["==", ["get", "name"], selectedVesselName],
+          1,
+          0.3,
+        ]);
+        map.setPaintProperty("vessels", "circle-stroke-opacity", [
+          "case",
+          ["==", ["get", "name"], selectedVesselName],
+          1,
+          0.3,
+        ]);
+      } else {
+        map.setPaintProperty("vessels", "circle-radius", 4.5);
+        map.setPaintProperty("vessels", "circle-opacity", 1);
+        map.setPaintProperty("vessels", "circle-stroke-opacity", 1);
+      }
+    }
+
+    if (map.getLayer("trajectories")) {
+      if (selectedVesselName) {
+        map.setPaintProperty("trajectories", "line-width", [
+          "case",
+          ["==", ["get", "name"], selectedVesselName],
+          3,
+          1,
+        ]);
+        map.setPaintProperty("trajectories", "line-opacity", [
+          "case",
+          ["==", ["get", "name"], selectedVesselName],
+          1,
+          0.2,
+        ]);
+      } else {
+        map.setPaintProperty("trajectories", "line-width", 1.5);
+        map.setPaintProperty("trajectories", "line-opacity", 0.6);
+      }
+    }
+
+    if (map.getLayer("oil-spill-fill")) {
+      const baseOpacity = selectedSpillId !== null ? 0.3 : 0.12;
+      const temporalFactor = selectedTimeOffset !== 0 ? (selectedTimeOffset > 0 ? 0.05 : -0.02) : 0;
+      map.setPaintProperty("oil-spill-fill", "fill-opacity", Math.max(0.08, baseOpacity + temporalFactor));
+    }
+
+    if (map.getLayer("oil-spill-outline")) {
+      if (selectedSpillId !== null) {
+        map.setPaintProperty("oil-spill-outline", "line-width", 2.5);
+      } else {
+        map.setPaintProperty("oil-spill-outline", "line-width", 1.5);
+      }
+    }
+  };
+
+  useEffect(() => {
+    applySelectionStyles();
+  }, [selectedVesselMmsi, selectedSpillId, selectedTimeOffset, caseData]);
+
+  // VIEW TRACK: fly the camera to the requested vessel's marker.
+  // Re-fires on every new token (even for the same vessel), but never
+  // touches layers/sources, so repeated clicks can't duplicate anything.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !flyToRequest) return;
+
+    const flyToVessel = () => {
+      const vesselName = caseData?.vessels?.find((v) => v.mmsi === flyToRequest.mmsi)?.name;
+      if (!vesselName) return;
+
+      const coords = vesselCoordsRef.current[vesselName];
+      if (!coords) return;
+
+      map.flyTo({
+        center: coords,
+        zoom: Math.max(map.getZoom(), 8.5),
+        essential: true,
+        duration: 1200,
+      });
+    };
+
+    if (map.isStyleLoaded()) {
+      flyToVessel();
+    } else {
+      map.once("load", flyToVessel);
+    }
+  }, [flyToRequest, caseData]);
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
     const map = new Map({
       container: mapContainer.current,
-      // Using a standard dark base map to get muted landmasses
       style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
       center: [70.082, 19.534],
       zoom: 5.8,
@@ -43,7 +221,6 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
     });
 
     map.on("load", () => {
-      // 0. Force Carto base map ocean/background to exact match #061419
       try {
         if (map.getLayer("background")) map.setPaintProperty("background", "background-color", "#061419");
         if (map.getLayer("water")) map.setPaintProperty("water", "fill-color", "#061419");
@@ -51,7 +228,6 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
         console.warn("Could not override basemap colors", e);
       }
 
-      // 1. Technical Grid Overlay
       const gridFeatures: Feature<LineString>[] = [];
       for (let lng = 50; lng <= 90; lng += 1) {
         gridFeatures.push({ type: "Feature", geometry: { type: "LineString", coordinates: [[lng, 0], [lng, 40]] }, properties: {} });
@@ -76,9 +252,9 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
         },
       });
 
-      // 2. Oil Spill Source & Layers (OBSERVED - GOLD)
       const oilSpillData: Feature<Polygon> = {
         type: "Feature",
+        id: 1,
         geometry: {
           type: "Polygon",
           coordinates: [
@@ -93,7 +269,7 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
             ],
           ],
         },
-        properties: {},
+        properties: { id: 1, area_km2: 42.7 },
       };
 
       map.addSource("oil-spill", {
@@ -122,7 +298,6 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
         },
       });
 
-      // 3. Probable Source Point & Layers (INFERRED - MAGENTA)
       const sourcePointData: Feature<Point> = {
         type: "Feature",
         geometry: {
@@ -165,7 +340,6 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
         },
       });
 
-      // 4. AIS Vessels Source & Layer (MEASURED - CYAN)
       const vesselsData: FeatureCollection<Point> = {
         type: "FeatureCollection",
         features: [
@@ -197,6 +371,14 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
         data: vesselsData,
       });
 
+      // Capture real marker coordinates for VIEW TRACK flyTo lookups.
+      vesselsData.features.forEach((f) => {
+        const name = f.properties?.name as string | undefined;
+        if (name && f.geometry.type === "Point") {
+          vesselCoordsRef.current[name] = f.geometry.coordinates as [number, number];
+        }
+      });
+
       map.addLayer({
         id: "vessels",
         type: "circle",
@@ -209,7 +391,6 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
         },
       });
 
-      // 5. Vessel Trajectories Source & Layer
       const trajectoriesData: FeatureCollection<LineString> = {
         type: "FeatureCollection",
         features: [
@@ -239,6 +420,32 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
             },
             properties: { name: "BLUE HORIZON" },
           },
+          {
+            type: "Feature",
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [70.05, 19.95],
+                [70.14, 19.87],
+                [70.20, 19.79],
+                [70.25, 19.72],
+              ],
+            },
+            properties: { name: "SEA QUEST" },
+          },
+          {
+            type: "Feature",
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [69.85, 18.85],
+                [69.95, 18.95],
+                [70.04, 19.03],
+                [70.12, 19.12],
+              ],
+            },
+            properties: { name: "EASTERN WIND" },
+          },
         ],
       };
 
@@ -259,7 +466,24 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
         },
       });
 
-      // 6. Labels
+      // WHAT-IF SIMULATOR SOURCE AND LAYER
+      map.addSource("sim-trajectory", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+
+      map.addLayer({
+        id: "sim-trajectory-layer",
+        type: "line",
+        source: "sim-trajectory",
+        paint: {
+          "line-color": "#FF6B6B",
+          "line-width": 2.5,
+          "line-opacity": 0.9,
+          "line-dasharray": [2, 2],
+        },
+      });
+
       map.addLayer({
         id: "vessel-labels",
         type: "symbol",
@@ -339,6 +563,23 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
               `</div>`
             )
             .addTo(map);
+
+          const vesselName = props?.name;
+          const matchedVessel = caseData?.vessels?.find((v) => v.name === vesselName);
+          const mmsi = matchedVessel ? matchedVessel.mmsi : null;
+
+          if (onVesselSelectRef.current) {
+            onVesselSelectRef.current(mmsi);
+          }
+        }
+      });
+
+      map.on("click", "oil-spill-fill", (e: MapLayerMouseEvent) => {
+        if (!e.features || e.features.length === 0) return;
+        const feature = e.features[0];
+        const spillId = typeof feature.properties?.id === "number" ? feature.properties.id : 1;
+        if (onSpillSelectRef.current) {
+          onSpillSelectRef.current(spillId);
         }
       });
 
@@ -349,6 +590,16 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
       map.on("mouseleave", "vessels", () => {
         map.getCanvas().style.cursor = "";
       });
+
+      map.on("mouseenter", "oil-spill-fill", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+
+      map.on("mouseleave", "oil-spill-fill", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+      applySelectionStyles();
     });
 
     return () => {
@@ -356,6 +607,33 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
       mapRef.current = null;
     };
   }, []);
+
+  // Update Simulator Trajectory on demand safely
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const source = map.getSource("sim-trajectory") as GeoJSONSource | undefined;
+    if (source) {
+      if (simulatedTrajectory && simulatedTrajectory.length > 0) {
+        source.setData({
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              geometry: {
+                type: "LineString",
+                coordinates: simulatedTrajectory,
+              },
+              properties: {},
+            },
+          ],
+        });
+      } else {
+        source.setData({ type: "FeatureCollection", features: [] });
+      }
+    }
+  }, [simulatedTrajectory]);
 
   const lat = caseData?.sourceRegion?.latitude?.toFixed?.(3) ?? "19.534";
   const lng = caseData?.sourceRegion?.longitude?.toFixed?.(3) ?? "70.082";
@@ -385,6 +663,10 @@ export const MapView: React.FC<MapViewProps> = ({ caseData }) => {
         <div className="legend-item">
           <span className="legend-color" style={{ backgroundColor: "#69B7D1" }}></span>
           <span>AIS VESSEL</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color" style={{ backgroundColor: "#FF6B6B" }}></span>
+          <span>SIMULATOR (WHAT-IF)</span>
         </div>
       </div>
     </div>
