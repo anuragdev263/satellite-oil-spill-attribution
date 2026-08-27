@@ -1,0 +1,242 @@
+[
+  {
+    "candidateId": "test:S1A_20190824_r15908_c25536_negative.npz",
+    "split": "test",
+    "rank": 1,
+    "tileName": "S1A_20190824_r15908_c25536_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.14.jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_01.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190812_r15908_c22463_positive.npz",
+    "split": "validation",
+    "rank": 9,
+    "tileName": "S1A_20190812_r15908_c22463_positive.npz",
+    "scene": "S1A_20190812",
+    "acquisitionDate": "2019-08-12",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.26.jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_09.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190812_r15908_c21439_negative.npz",
+    "split": "validation",
+    "rank": 10,
+    "tileName": "S1A_20190812_r15908_c21439_negative.npz",
+    "scene": "S1A_20190812",
+    "acquisitionDate": "2019-08-12",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.26 (1).jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_10.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190824_r17444_c16832_negative.npz",
+    "split": "validation",
+    "rank": 7,
+    "tileName": "S1A_20190824_r17444_c16832_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.25.jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_07.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190824_r18468_c25024_positive.npz",
+    "split": "validation",
+    "rank": 8,
+    "tileName": "S1A_20190824_r18468_c25024_positive.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.25 (1).jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_08.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190824_r16420_c17344_negative.npz",
+    "split": "validation",
+    "rank": 4,
+    "tileName": "S1A_20190824_r16420_c17344_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.24.jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_04.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190824_r16932_c17344_positive.npz",
+    "split": "validation",
+    "rank": 6,
+    "tileName": "S1A_20190824_r16932_c17344_positive.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.24 (2).jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_06.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190824_r18980_c25024_positive.npz",
+    "split": "validation",
+    "rank": 5,
+    "tileName": "S1A_20190824_r18980_c25024_positive.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.24 (1).jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_05.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190824_r16932_c16832_negative.npz",
+    "split": "validation",
+    "rank": 2,
+    "tileName": "S1A_20190824_r16932_c16832_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.23.jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_02.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190824_r19492_c25024_positive.npz",
+    "split": "validation",
+    "rank": 3,
+    "tileName": "S1A_20190824_r19492_c25024_positive.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.23 (1).jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_03.png"
+  },
+  {
+    "candidateId": "test:S1A_20190824_r15396_c23488_negative.npz",
+    "split": "test",
+    "rank": 12,
+    "tileName": "S1A_20190824_r15396_c23488_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.22.jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_12.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190824_r16420_c16832_negative.npz",
+    "split": "validation",
+    "rank": 1,
+    "tileName": "S1A_20190824_r16420_c16832_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.22 (1).jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_01.png"
+  },
+  {
+    "candidateId": "test:S1A_20190824_r15396_c22976_negative.npz",
+    "split": "test",
+    "rank": 10,
+    "tileName": "S1A_20190824_r15396_c22976_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.21.jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_10.png"
+  },
+  {
+    "candidateId": "test:S1A_20190824_r16420_c25024_negative.npz",
+    "split": "test",
+    "rank": 11,
+    "tileName": "S1A_20190824_r16420_c25024_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.21 (1).jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_11.png"
+  },
+  {
+    "candidateId": "test:S1A_20190824_r15908_c24512_negative.npz",
+    "split": "test",
+    "rank": 9,
+    "tileName": "S1A_20190824_r15908_c24512_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.19.jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_09.png"
+  },
+  {
+    "candidateId": "test:S1A_20190824_r16932_c25024_negative.npz",
+    "split": "test",
+    "rank": 8,
+    "tileName": "S1A_20190824_r16932_c25024_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.18.jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_08.png"
+  },
+  {
+    "candidateId": "test:S1A_20190824_r15396_c24000_negative.npz",
+    "split": "test",
+    "rank": 6,
+    "tileName": "S1A_20190824_r15396_c24000_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.17.jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_06.png"
+  },
+  {
+    "candidateId": "test:S1A_20190824_r16932_c22464_positive.npz",
+    "split": "test",
+    "rank": 7,
+    "tileName": "S1A_20190824_r16932_c22464_positive.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.17 (1).jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_07.png"
+  },
+  {
+    "candidateId": "test:S1A_20190824_r17956_c25024_positive.npz",
+    "split": "test",
+    "rank": 5,
+    "tileName": "S1A_20190824_r17956_c25024_positive.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.16.jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_05.png"
+  },
+  {
+    "candidateId": "test:S1A_20190824_r15908_c24000_positive.npz",
+    "split": "test",
+    "rank": 2,
+    "tileName": "S1A_20190824_r15908_c24000_positive.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.15.jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_02.png"
+  },
+  {
+    "candidateId": "test:S1A_20190824_r16932_c25536_negative.npz",
+    "split": "test",
+    "rank": 4,
+    "tileName": "S1A_20190824_r16932_c25536_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.15 (2).jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_04.png"
+  },
+  {
+    "candidateId": "test:S1A_20190824_r15396_c25536_negative.npz",
+    "split": "test",
+    "rank": 3,
+    "tileName": "S1A_20190824_r15396_c25536_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.15 (1).jpeg",
+    "compositePreviewUrl": "/data/previews/test/test_rank_03.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190812_r15908_c21951_negative.npz",
+    "split": "validation",
+    "rank": 12,
+    "tileName": "S1A_20190812_r15908_c21951_negative.npz",
+    "scene": "S1A_20190812",
+    "acquisitionDate": "2019-08-12",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.27 (1).jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_12.png"
+  },
+  {
+    "candidateId": "validation:S1A_20190824_r16420_c18368_negative.npz",
+    "split": "validation",
+    "rank": 11,
+    "tileName": "S1A_20190824_r16420_c18368_negative.npz",
+    "scene": "S1A_20190824",
+    "acquisitionDate": "2019-08-24",
+    "sourcePreviewFile": "WhatsApp Image 2026-08-27 at 22.09.27.jpeg",
+    "compositePreviewUrl": "/data/previews/validation/validation_rank_11.png"
+  }
+]

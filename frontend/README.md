@@ -1,75 +1,106 @@
-# React + TypeScript + Vite
+# OilSpill Intelligence Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+OilSpill Intelligence is a React, TypeScript and MapLibre review console for the SIH 2026 SAR oil-spill prototype. The default workspace is Detection Review, a data-backed candidate slick review queue. The Source Attribution workspace is preserved as a synthetic concept demo only.
 
-Currently, two official plugins are available:
+## Current Pipeline
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The real supplied pipeline is:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```text
+SAR tile -> CNN screening score -> U-Net heatmap -> fusion ranking score -> ranked candidate-review queue -> human review
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+This experimental system prioritizes SAR regions for human review. It does not confirm an oil spill or identify a responsible vessel.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Setup
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev
+npm run build
+npm run lint
+npm test
 ```
+
+In this environment, dependency installation required `npm install --strict-ssl=false` because npm package fetches failed with `UNABLE_TO_VERIFY_LEAF_SIGNATURE`.
+
+## Static Data Locations
+
+The app loads static SIH demo outputs from:
+
+```text
+public/data/fusion_candidate_rankings.csv
+public/data/fusion_summary.json
+public/data/candidate_assets.json
+public/data/previews/test/test_rank_01.png ... test_rank_12.png
+public/data/previews/validation/validation_rank_01.png ... validation_rank_12.png
+```
+
+The CSV contains 81 held-out candidate rows: 43 Validation and 38 Test. The preview manifest maps exactly 24 unique top-candidate previews: Test ranks 1-12 and Validation ranks 1-12.
+
+## Architecture
+
+Core data and validation live in `src/services/fusionDataService.ts`. Manual review persistence lives behind `ReviewRepository` in `src/services/reviewRepository.ts`, with a localStorage implementation for this static demo.
+
+Main UI components:
+
+- `DetectionReviewWorkspace`: real CSV/JSON/image-driven review workflow.
+- `CandidateQueue`: filterable and sortable candidate list.
+- `CandidateMap`: MapLibre tile-centre point map.
+- `CandidateInspector`: preview, model fields and manual review controls.
+- `EvaluationPanel`: held-out ground truth and metrics, visible only in Evaluation Mode.
+- `RunInformationDrawer`: run metadata and provenance.
+- `AttributionConceptWorkspace`: isolated synthetic future-scope concept.
+
+## Score Definitions
+
+`final_fusion_score` is an uncalibrated ranking value:
+
+```text
+cnn_score * unet_p95_probability * log1p(candidate_pixel_count)
+```
+
+Display labels:
+
+- Fusion Ranking Score: raw value, three decimals, never a percent.
+- CNN Screening Score: raw CNN output, three decimals.
+- U-Net p95 Heatmap Value: p95 heatmap value, three decimals.
+- Candidate Fraction: fraction of pixels above U-Net threshold, displayed as a percentage.
+
+## Normal Review vs Evaluation Mode
+
+Normal Review Mode is the default. It hides ground-truth label and mask-pixel fields, masks the preview header, avoids positive/negative filename text, and does not style candidates by label.
+
+Evaluation Mode is visibly distinct and reveals held-out ground truth, mask pixels, top-12 positive counts, and reported CNN/U-Net metrics. It is not part of the operational review workflow.
+
+## Review Persistence
+
+Manual review supports:
+
+- Needs Review
+- Likely Slick
+- False Positive
+- Unclear
+
+Reviewer notes, optional reviewer name and updated timestamp persist in localStorage. Reviews can be exported/imported as JSON with candidate-ID validation. Candidate IDs use `split + ":" + tile_name`.
+
+## Known Limitations
+
+- Dataset is small: 266 cleaned SAR tiles, 64 positive and 202 negative.
+- Held-out split is grouped: 43 Validation and 38 Test.
+- Current top-12 results are 5 positives in Validation and 3 positives in Test.
+- CNN Test F1 is 0.324, Precision 0.222, Recall 0.600, AUC-ROC 0.557.
+- U-Net Test Dice is 0.0137, Precision 0.0077, Recall 0.0626 at threshold 0.20.
+- Candidate previews are image-space composites, not georeferenced polygons.
+- The repository does not include AIS positions, AIS tracks, drift fields or source-attribution outputs.
+
+## Future Backend Integration
+
+A future API can replace the static loader without rewriting presentation components:
+
+- `GET /api/candidates`
+- `GET /api/candidates/{id}`
+- `GET /api/summary`
+- `POST /api/review`
+
+Live vessel attribution requires external AIS, environmental drift inputs, source-estimation outputs and an attribution-score specification.

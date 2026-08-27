@@ -300,13 +300,13 @@ export const MapView: React.FC<MapViewProps> = ({
 
       const sourcePointData: Feature<Point> = {
         type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [70.082, 19.534],
-        },
-        properties: {
-          name: "PROBABLE SOURCE",
-          confidence: "87%",
+          geometry: {
+            type: "Point",
+            coordinates: [70.082, 19.534],
+          },
+          properties: {
+          name: "CONCEPT SOURCE",
+          confidence: "0.87",
         },
       };
 
@@ -345,23 +345,23 @@ export const MapView: React.FC<MapViewProps> = ({
         features: [
           {
             type: "Feature",
-            geometry: { type: "Point", coordinates: [69.82, 19.67] },
-            properties: { name: "OCEAN STAR", rank: 1, confidence: "92%" },
+          geometry: { type: "Point", coordinates: [69.82, 19.67] },
+            properties: { name: "OCEAN STAR", rank: 1, confidence: "0.92" },
           },
           {
             type: "Feature",
-            geometry: { type: "Point", coordinates: [69.45, 19.35] },
-            properties: { name: "BLUE HORIZON", rank: 2, confidence: "81%" },
+          geometry: { type: "Point", coordinates: [69.45, 19.35] },
+            properties: { name: "BLUE HORIZON", rank: 2, confidence: "0.81" },
           },
           {
             type: "Feature",
-            geometry: { type: "Point", coordinates: [70.25, 19.72] },
-            properties: { name: "SEA QUEST", rank: 3, confidence: "68%" },
+          geometry: { type: "Point", coordinates: [70.25, 19.72] },
+            properties: { name: "SEA QUEST", rank: 3, confidence: "0.68" },
           },
           {
             type: "Feature",
-            geometry: { type: "Point", coordinates: [70.12, 19.12] },
-            properties: { name: "EASTERN WIND", rank: 4, confidence: "54%" },
+          geometry: { type: "Point", coordinates: [70.12, 19.12] },
+            properties: { name: "EASTERN WIND", rank: 4, confidence: "0.54" },
           },
         ],
       };
@@ -507,7 +507,7 @@ export const MapView: React.FC<MapViewProps> = ({
         type: "symbol",
         source: "source-point",
         layout: {
-          "text-field": "PROBABLE SOURCE\nCONFIDENCE 87%",
+          "text-field": "CONCEPT SOURCE\nSYNTHETIC DEMO",
           "text-size": 10,
           "text-offset": [1.2, 0],
           "text-anchor": "left",
@@ -525,7 +525,7 @@ export const MapView: React.FC<MapViewProps> = ({
         type: "symbol",
         source: "oil-spill",
         layout: {
-          "text-field": "OIL SLICK DETECTED\n42.7 km² · 91% CONFIDENCE",
+          "text-field": "SYNTHETIC SLICK AREA\nCONCEPT DEMO ONLY",
           "text-size": 10,
           "text-anchor": "center",
           "text-font": ["Metropolis Regular", "sans-serif"],
@@ -559,7 +559,7 @@ export const MapView: React.FC<MapViewProps> = ({
               `<div style="font-family: 'JetBrains Mono', monospace; padding: 2px;">` +
                 `<div style="font-size: 11px; font-weight: 700; color: #D8E4E8; margin-bottom: 4px; letter-spacing: 0.05em;">${props?.name}</div>` +
                 `<div style="font-size: 9px; color: #D6A94A; margin-bottom: 6px;">RANK #${props?.rank}</div>` +
-                `<div style="font-size: 8px; color: #7C9AA3;">ATTRIBUTION CONFIDENCE: <span style="color: #9DD7E8">${props?.confidence}</span></div>` +
+                `<div style="font-size: 8px; color: #7C9AA3;">SYNTHETIC DEMO SCORE: <span style="color: #9DD7E8">${props?.confidence}</span></div>` +
               `</div>`
             )
             .addTo(map);

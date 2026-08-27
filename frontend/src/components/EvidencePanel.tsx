@@ -17,14 +17,14 @@ export default function EvidencePanel({
     <section className="panel-section evidence-section">
       <div className="panel-header">
         <div>
-          <span className="panel-kicker">EVIDENCE FUSION</span>
-          <h2>CONFIDENCE CHAIN</h2>
+          <span className="panel-kicker">SYNTHETIC EVIDENCE</span>
+          <h2>CONCEPT CHAIN</h2>
         </div>
       </div>
 
       <div className="overall-confidence">
         <div>
-          <span>PROBABLE SOURCE CONFIDENCE</span>
+          <span>CONCEPT SOURCE DEMO SCORE</span>
           <strong>
             {(confidence * 100).toFixed(0)}%
           </strong>

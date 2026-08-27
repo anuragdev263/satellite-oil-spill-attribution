@@ -30,7 +30,7 @@ export default function VesselRanking({
           <span className="panel-kicker">
             {selectedVesselMmsi ? "VESSEL INVESTIGATION" : "INVESTIGATION"}
           </span>
-          <h2>{selectedVesselMmsi ? "ACTIVE CANDIDATE" : "RANKED VESSELS"}</h2>
+          <h2>{selectedVesselMmsi ? "ACTIVE DEMO VESSEL" : "SYNTHETIC VESSELS"}</h2>
         </div>
 
         <span className="candidate-count">
@@ -89,7 +89,7 @@ export default function VesselRanking({
                   <strong style={isSelected ? { color: "#D6A94A" } : undefined}>
                     {vessel.score.toFixed(2)}
                   </strong>
-                  <span>CONF</span>
+                  <span>DEMO</span>
                 </div>
               </div>
 
@@ -169,16 +169,16 @@ export default function VesselRanking({
                       EVIDENCE CONTRIBUTION
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                      <span>SATELLITE SIGNATURE</span> <span>91%</span>
+                      <span>SYNTHETIC SATELLITE CUE</span> <span>0.91</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                      <span>AIS PROXIMITY</span> <span>84%</span>
+                      <span>SYNTHETIC AIS PROXIMITY</span> <span>0.84</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                      <span>BACKTRACK CONSISTENCY</span> <span>78%</span>
+                      <span>SYNTHETIC BACKTRACK</span> <span>0.78</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>VESSEL BEHAVIOUR</span> <span>71%</span>
+                      <span>SYNTHETIC BEHAVIOUR</span> <span>0.71</span>
                     </div>
                   </div>
 
