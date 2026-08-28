@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Route } from "lucide-react";
 import type { Candidate, FusionSummary } from "../types/candidates";
 import {
   formatCoordinate,
@@ -16,6 +17,7 @@ type CandidateInspectorProps = {
   summary: FusionSummary | null;
   evaluationMode: boolean;
   onReviewChange: (review: Candidate["review"]) => void;
+  onOpenBacktracking: () => void;
   onPrevious: () => void;
   onNext: () => void;
   hasPrevious: boolean;
@@ -27,6 +29,7 @@ export default function CandidateInspector({
   summary,
   evaluationMode,
   onReviewChange,
+  onOpenBacktracking,
   onPrevious,
   onNext,
   hasPrevious,
@@ -73,14 +76,6 @@ export default function CandidateInspector({
 
       <dl className="detail-grid">
         <div>
-          <dt>Scene ID</dt>
-          <dd>{candidate.scene}</dd>
-        </div>
-        <div>
-          <dt>Tile Identifier</dt>
-          <dd>{shortenTileName(candidate.tileName)}</dd>
-        </div>
-        <div>
           <dt>Acquisition Date</dt>
           <dd>{candidate.acquisitionDate}</dd>
         </div>
@@ -91,50 +86,44 @@ export default function CandidateInspector({
           </dd>
         </div>
         <div>
+          <dt>Review Status</dt>
+          <dd>{candidate.review.status}</dd>
+        </div>
+        <div>
           <dt>Split / Rank</dt>
           <dd>
             {candidate.split} #{candidate.rank}
           </dd>
         </div>
         <div>
-          <dt>CNN Screening Score</dt>
+          <dt>CNN Score <span className="provenance-micro">Model</span></dt>
           <dd>{formatDecimal(candidate.cnnScore)}</dd>
         </div>
         <div>
-          <dt>U-Net Mean Heatmap Value</dt>
-          <dd>{formatDecimal(candidate.unetMeanProbability)}</dd>
-        </div>
-        <div>
-          <dt>U-Net Max Heatmap Value</dt>
-          <dd>{formatDecimal(candidate.unetMaxProbability)}</dd>
-        </div>
-        <div>
-          <dt>U-Net p95 Heatmap Value</dt>
+          <dt>U-Net p95 <span className="provenance-micro">Model</span></dt>
           <dd>{formatDecimal(candidate.unetP95Probability)}</dd>
-        </div>
-        <div>
-          <dt>Candidate Pixels</dt>
-          <dd>{formatInteger(candidate.candidatePixelCount)}</dd>
         </div>
         <div>
           <dt>Candidate Fraction</dt>
           <dd>{formatPercentFraction(candidate.candidateFraction)}</dd>
         </div>
         <div>
-          <dt>Fusion Ranking Score</dt>
+          <dt>Fusion Ranking <span className="provenance-micro">Derived</span></dt>
           <dd>{formatDecimal(candidate.finalFusionScore)}</dd>
         </div>
-        <div>
-          <dt>U-Net Threshold</dt>
-          <dd>{summary?.unetThreshold !== undefined ? formatDecimal(summary.unetThreshold, 2) : "Not supplied"}</dd>
-        </div>
-        <div>
-          <dt>CRS</dt>
-          <dd>
-            {summary?.latlonCrs ?? "Not supplied"} / {summary?.sourceCrs ?? "Not supplied"}
-          </dd>
-        </div>
       </dl>
+
+      <section className="backtracking-inline-state">
+        <div>
+          <span className="panel-kicker">BACKTRACKING</span>
+          <strong>Backtracking unavailable for this candidate</strong>
+        </div>
+        <ModeBadge tone="warning">Unverified</ModeBadge>
+        <button className="console-button subtle compact-action" type="button" onClick={onOpenBacktracking}>
+          <Route size={13} />
+          Backtracking
+        </button>
+      </section>
 
       {evaluationMode ? (
         <section className="ground-truth-box">
@@ -157,6 +146,48 @@ export default function CandidateInspector({
       ) : null}
 
       <ReviewControls review={candidate.review} onChange={onReviewChange} />
+
+      <details className="technical-details">
+        <summary>Technical details</summary>
+        <dl className="detail-grid">
+          <div>
+            <dt>Scene ID</dt>
+            <dd>{candidate.scene}</dd>
+          </div>
+          <div>
+            <dt>Tile Identifier</dt>
+            <dd>{shortenTileName(candidate.tileName)}</dd>
+          </div>
+          <div>
+            <dt>U-Net Mean</dt>
+            <dd>{formatDecimal(candidate.unetMeanProbability)}</dd>
+          </div>
+          <div>
+            <dt>U-Net Max</dt>
+            <dd>{formatDecimal(candidate.unetMaxProbability)}</dd>
+          </div>
+          <div>
+            <dt>Candidate Pixels</dt>
+            <dd>{formatInteger(candidate.candidatePixelCount)}</dd>
+          </div>
+          <div>
+            <dt>U-Net Threshold</dt>
+            <dd>{summary?.unetThreshold !== undefined ? formatDecimal(summary.unetThreshold, 2) : "Not supplied"}</dd>
+          </div>
+          <div>
+            <dt>Projected Bounds</dt>
+            <dd>
+              {formatInteger(Math.round(candidate.projectedBounds.left))}, {formatInteger(Math.round(candidate.projectedBounds.bottom))}
+            </dd>
+          </div>
+          <div>
+            <dt>CRS</dt>
+            <dd>
+              {summary?.latlonCrs ?? "Not supplied"} / {summary?.sourceCrs ?? "Not supplied"}
+            </dd>
+          </div>
+        </dl>
+      </details>
     </aside>
   );
 }

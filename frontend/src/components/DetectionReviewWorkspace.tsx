@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Upload, Download, RotateCcw, Info } from "lucide-react";
 import CandidateFiltersPanel from "./CandidateFiltersPanel";
 import CandidateInspector from "./CandidateInspector";
@@ -10,10 +10,20 @@ import EvaluationPanel from "./EvaluationPanel";
 import ModeBadge from "./ModeBadge";
 import RunInformationDrawer from "./RunInformationDrawer";
 import SpillDetectionSummary from "./SpillDetectionSummary";
+import InvestigationFlow from "./InvestigationFlow";
+import MapControlShelf from "./MapControlShelf";
+import BacktrackingWindow from "./BacktrackingWindow";
+import { generateCandidateReviewPdf } from "../services/reportService";
 import { validateImportedReviews } from "../services/reviewRepository";
 import { DEFAULT_FILTERS } from "../constants/candidateFilters";
 import type { Candidate, CandidateFilters, CandidateReview, DataLoadState } from "../types/candidates";
 import { useFusionRun } from "../hooks/useFusionRun";
+import {
+  DEFAULT_REVIEW_MAP_SELECTION,
+  loadReviewMapLayers,
+  type ReviewMapLayer,
+  type ReviewMapSelection,
+} from "../services/mapLayerService";
 
 type DetectionReviewWorkspaceProps = {
   mode: "detection" | "attribution";
@@ -29,8 +39,28 @@ export default function DetectionReviewWorkspace({
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [evaluationMode, setEvaluationMode] = useState(false);
   const [runInfoOpen, setRunInfoOpen] = useState(false);
+  const [backtrackingOpen, setBacktrackingOpen] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [mapSelection, setMapSelection] = useState<ReviewMapSelection>(DEFAULT_REVIEW_MAP_SELECTION);
+  const [reviewLayers, setReviewLayers] = useState<ReviewMapLayer[]>([]);
+  const [layerError, setLayerError] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadReviewMapLayers()
+      .then((layers) => {
+        if (!cancelled) setReviewLayers(layers);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setLayerError(error instanceof Error ? error.message : "Could not load review map layers.");
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (dataState.status === "loading") {
     return (
@@ -73,9 +103,15 @@ export default function DetectionReviewWorkspace({
       resetReviews={resetReviews}
       runInfoOpen={runInfoOpen}
       setRunInfoOpen={setRunInfoOpen}
+      backtrackingOpen={backtrackingOpen}
+      setBacktrackingOpen={setBacktrackingOpen}
       importRef={importRef}
       importError={importError}
       setImportError={setImportError}
+      mapSelection={mapSelection}
+      setMapSelection={setMapSelection}
+      reviewLayers={reviewLayers}
+      layerError={layerError}
       mode={mode}
       onModeChange={onModeChange}
     />
@@ -95,9 +131,15 @@ type ReadyWorkspaceProps = {
   resetReviews: () => void;
   runInfoOpen: boolean;
   setRunInfoOpen: (value: boolean) => void;
+  backtrackingOpen: boolean;
+  setBacktrackingOpen: (value: boolean) => void;
   importRef: React.RefObject<HTMLInputElement | null>;
   importError: string | null;
   setImportError: (message: string | null) => void;
+  mapSelection: ReviewMapSelection;
+  setMapSelection: (selection: ReviewMapSelection) => void;
+  reviewLayers: ReviewMapLayer[];
+  layerError: string | null;
   mode: "detection" | "attribution";
   onModeChange: (mode: "detection" | "attribution") => void;
 };
@@ -115,16 +157,31 @@ function ReadyWorkspace({
   resetReviews,
   runInfoOpen,
   setRunInfoOpen,
+  backtrackingOpen,
+  setBacktrackingOpen,
   importRef,
   importError,
   setImportError,
+  mapSelection,
+  setMapSelection,
+  reviewLayers,
+  layerError,
   mode,
   onModeChange,
 }: ReadyWorkspaceProps) {
   const run = dataState.run;
+  const workspaceFilters = useMemo(
+    () => ({
+      ...filters,
+      acquisitionDate: mapSelection.activeDate.startsWith("2019-")
+        ? mapSelection.activeDate
+        : filters.acquisitionDate,
+    }),
+    [filters, mapSelection.activeDate]
+  );
   const filteredCandidates = useMemo(
-    () => applyCandidateFilters(run.candidates, filters),
-    [run.candidates, filters]
+    () => applyCandidateFilters(run.candidates, workspaceFilters, mapSelection),
+    [run.candidates, workspaceFilters, mapSelection]
   );
 
   const selectedCandidate =
@@ -153,6 +210,11 @@ function ReadyWorkspace({
     link.download = "oilspill_candidate_reviews.json";
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportCandidateReport = () => {
+    if (!selectedCandidate) return;
+    generateCandidateReviewPdf(selectedCandidate, run.summary);
   };
 
   const handleImportReviews = async (file: File | undefined) => {
@@ -190,8 +252,18 @@ function ReadyWorkspace({
             <button className="icon-button" type="button" onClick={() => setRunInfoOpen(true)} aria-label="Open run information">
               <Info size={16} />
             </button>
-            <button className="icon-button" type="button" onClick={handleExportReviews} aria-label="Export reviews">
+            <button
+              className="icon-button"
+              type="button"
+              onClick={handleExportCandidateReport}
+              disabled={!selectedCandidate}
+              aria-label="Download candidate review report"
+              title="Download candidate review report"
+            >
               <Download size={16} />
+            </button>
+            <button className="console-button subtle compact-action" type="button" onClick={handleExportReviews}>
+              Export Reviews
             </button>
             <button className="icon-button" type="button" onClick={() => importRef.current?.click()} aria-label="Import reviews">
               <Upload size={16} />
@@ -219,7 +291,17 @@ function ReadyWorkspace({
 
         {importError ? <div className="inline-error">{importError}</div> : null}
         {evaluationMode ? <EvaluationPanel candidates={run.candidates} /> : null}
-        <SpillDetectionSummary />
+        <div className="control-shelf-row">
+          <SpillDetectionSummary />
+          <MapControlShelf
+            candidates={run.candidates}
+            layers={reviewLayers}
+            selection={mapSelection}
+            layerError={layerError}
+            onChange={setMapSelection}
+          />
+          <InvestigationFlow />
+        </div>
 
         <section className="review-grid">
           <div className="queue-column">
@@ -236,6 +318,8 @@ function ReadyWorkspace({
             candidates={filteredCandidates}
             selectedCandidateId={selectedCandidate?.candidateId ?? null}
             onSelect={setSelectedCandidateId}
+            selection={mapSelection}
+            reviewLayers={reviewLayers}
           />
 
           <CandidateInspector
@@ -243,6 +327,7 @@ function ReadyWorkspace({
             summary={run.summary}
             evaluationMode={evaluationMode}
             onReviewChange={saveReview}
+            onOpenBacktracking={() => setBacktrackingOpen(true)}
             onPrevious={() => {
               if (selectedIndex > 0) setSelectedCandidateId(filteredCandidates[selectedIndex - 1].candidateId);
             }}
@@ -258,14 +343,24 @@ function ReadyWorkspace({
       </main>
 
       <RunInformationDrawer run={run} open={runInfoOpen} onClose={() => setRunInfoOpen(false)} />
+      <BacktrackingWindow
+        candidate={selectedCandidate}
+        open={backtrackingOpen}
+        onClose={() => setBacktrackingOpen(false)}
+      />
     </div>
   );
 }
 
-function applyCandidateFilters(candidates: Candidate[], filters: CandidateFilters): Candidate[] {
+function applyCandidateFilters(
+  candidates: Candidate[],
+  filters: CandidateFilters,
+  mapSelection: ReviewMapSelection
+): Candidate[] {
   const search = filters.search.trim().toLowerCase();
 
   return candidates
+    .filter(() => mapSelection.activeLocation !== "qeshm-hengam-2026")
     .filter((candidate) => filters.split === "all" || candidate.split === filters.split)
     .filter((candidate) => filters.reviewStatus === "all" || candidate.review.status === filters.reviewStatus)
     .filter((candidate) => {

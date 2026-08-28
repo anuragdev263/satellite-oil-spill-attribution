@@ -1,10 +1,15 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LngLatBounds, Map, NavigationControl, Popup, setWorkerUrl } from "maplibre-gl";
 import type { GeoJSONSource, MapLayerMouseEvent } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Feature, FeatureCollection, Point } from "geojson";
+import type { Feature, FeatureCollection, Geometry, Point } from "geojson";
 import type { Candidate } from "../types/candidates";
+import {
+  filterFeatureCollection,
+  type ReviewMapLayer,
+  type ReviewMapSelection,
+} from "../services/mapLayerService";
 import { formatCoordinate, formatDecimal } from "../utils/format";
 
 setWorkerUrl(workerUrl);
@@ -13,21 +18,58 @@ type CandidateMapProps = {
   candidates: Candidate[];
   selectedCandidateId: string | null;
   onSelect: (candidateId: string) => void;
+  selection: ReviewMapSelection;
+  reviewLayers: ReviewMapLayer[];
 };
 
 export default function CandidateMap({
   candidates,
   selectedCandidateId,
   onSelect,
+  selection,
+  reviewLayers,
 }: CandidateMapProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
   const popupRef = useRef<Popup | null>(null);
   const onSelectRef = useRef(onSelect);
+  const candidatesRef = useRef(candidates);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
     onSelectRef.current = onSelect;
   }, [onSelect]);
+
+  useEffect(() => {
+    candidatesRef.current = candidates;
+  }, [candidates]);
+
+  const handleMapClick = useCallback((event: MapLayerMouseEvent) => {
+    const feature = event.features?.[0];
+    const candidateId = feature?.properties?.candidateId;
+    if (typeof candidateId !== "string" || feature?.geometry.type !== "Point") return;
+
+    const candidate = candidatesRef.current.find((item) => item.candidateId === candidateId);
+    if (!candidate) return;
+
+    onSelectRef.current(candidateId);
+    popupRef.current?.remove();
+    popupRef.current = new Popup({
+      closeButton: true,
+      closeOnClick: true,
+      className: "custom-map-popup",
+    })
+      .setLngLat([candidate.longitude, candidate.latitude])
+      .setHTML(
+        `<div class="map-popup-content">` +
+          `<strong>${escapeHtml(candidate.split.toUpperCase())} rank ${candidate.rank}</strong>` +
+          `<span>${escapeHtml(candidate.acquisitionDate)}</span>` +
+          `<span>${formatCoordinate(candidate.latitude)}, ${formatCoordinate(candidate.longitude)}</span>` +
+          `<span>Review Priority Score: ${formatDecimal(candidate.finalFusionScore)}</span>` +
+        `</div>`
+      )
+      .addTo(mapRef.current!);
+  }, []);
 
   const candidatePatchFeatures = useMemo<FeatureCollection<Point>>(() => {
     const maxScore = Math.max(...candidates.map((candidate) => candidate.finalFusionScore), 1);
@@ -43,6 +85,15 @@ export default function CandidateMap({
       ),
     };
   }, [candidates, selectedCandidateId]);
+
+  const filteredReviewLayerCollections = useMemo(
+    () =>
+      reviewLayers.map((layer) => ({
+        layer,
+        collection: filterFeatureCollection(layer, selection),
+      })),
+    [reviewLayers, selection]
+  );
 
   const candidateLabelFeatures = useMemo<FeatureCollection<Point>>(
     () => ({
@@ -72,7 +123,7 @@ export default function CandidateMap({
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
-    const first = candidates[0];
+    const first = candidatesRef.current[0];
     const map = new Map({
       container: mapContainer.current,
       style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
@@ -83,7 +134,7 @@ export default function CandidateMap({
     });
 
     mapRef.current = map;
-    map.addControl(new NavigationControl({ showCompass: true, showZoom: true }), "bottom-right");
+    map.addControl(new NavigationControl({ showCompass: true, showZoom: true }), "top-right");
 
     map.on("load", () => {
       const gridFeatures = [];
@@ -119,12 +170,12 @@ export default function CandidateMap({
 
       map.addSource("candidate-patches", {
         type: "geojson",
-        data: candidatePatchFeatures,
+        data: emptyFeatureCollection,
       });
 
       map.addSource("candidate-label-points", {
         type: "geojson",
-        data: candidateLabelFeatures,
+        data: emptyFeatureCollection,
       });
 
       map.addLayer({
@@ -155,6 +206,39 @@ export default function CandidateMap({
           ],
           "circle-blur": 0.72,
         },
+      });
+
+      REVIEW_LAYER_STYLE_ORDER.forEach(({ sourceId, layerId, type }) => {
+        map.addSource(sourceId, {
+          type: "geojson",
+          data: emptyFeatureCollection,
+        });
+        if (type === "fill") {
+          map.addLayer({
+            id: layerId,
+            type: "fill",
+            source: sourceId,
+            paint: {
+              "fill-color": ["get", "color"],
+              "fill-opacity": 0.14,
+              "fill-outline-color": ["get", "color"],
+            },
+          });
+        } else {
+          map.addLayer({
+            id: layerId,
+            type: "circle",
+            source: sourceId,
+            paint: {
+              "circle-radius": ["case", ["==", ["get", "selected"], true], 7, 4.5],
+              "circle-color": ["get", "color"],
+              "circle-opacity": 0.82,
+              "circle-stroke-color": "#061419",
+              "circle-stroke-width": 1.2,
+            },
+          });
+        }
+        map.setLayoutProperty(layerId, "visibility", "none");
       });
 
       map.addLayer({
@@ -216,25 +300,52 @@ export default function CandidateMap({
         map.getCanvas().style.cursor = "";
       });
 
-      fitMapToCandidates(map, candidates);
+      setMapReady(true);
     });
 
     return () => {
       popupRef.current?.remove();
       map.remove();
       mapRef.current = null;
+      setMapReady(false);
     };
-  }, []);
+  }, [handleMapClick]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !mapReady) return;
     const patchSource = map.getSource("candidate-patches") as GeoJSONSource | undefined;
     const labelSource = map.getSource("candidate-label-points") as GeoJSONSource | undefined;
     patchSource?.setData(candidatePatchFeatures);
     labelSource?.setData(candidateLabelFeatures);
-    fitMapToCandidates(map, candidates);
-  }, [candidatePatchFeatures, candidateLabelFeatures, candidates]);
+  }, [candidatePatchFeatures, candidateLabelFeatures, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    filteredReviewLayerCollections.forEach(({ layer, collection }) => {
+      const definition = REVIEW_LAYER_STYLE_ORDER.find((item) => item.id === layer.id);
+      if (!definition) return;
+      const source = map.getSource(definition.sourceId) as GeoJSONSource | undefined;
+      source?.setData(colorizeLayerCollection(layer, collection));
+      map.setLayoutProperty(
+        definition.layerId,
+        "visibility",
+        selection.toggles[layer.toggle] ? "visible" : "none"
+      );
+    });
+
+    map.setLayoutProperty("candidate-patch-glow", "visibility", selection.toggles.candidatePoints ? "visible" : "none");
+    map.setLayoutProperty("candidate-patch-particles", "visibility", selection.toggles.candidatePoints ? "visible" : "none");
+    map.setLayoutProperty("candidate-labels", "visibility", selection.toggles.candidatePoints ? "visible" : "none");
+  }, [filteredReviewLayerCollections, mapReady, selection.toggles]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    fitMapToFeatures(map, candidateLabelFeatures, filteredReviewLayerCollections.map((item) => item.collection));
+  }, [selection.fitNonce, candidateLabelFeatures, filteredReviewLayerCollections, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -251,7 +362,6 @@ export default function CandidateMap({
   }, [selectedCandidateId, candidates]);
 
   const selected = candidates.find((candidate) => candidate.candidateId === selectedCandidateId);
-
   return (
     <section className="map-wrapper detection-map-wrapper">
       <div className="map-overlay-title">
@@ -265,6 +375,11 @@ export default function CandidateMap({
           : "No candidate selected"}
       </div>
       <div ref={mapContainer} className="map-container" />
+      <div className="backtracking-status-card">
+        <span className="panel-kicker">BACKTRACKING</span>
+        <strong>{selected ? "Backtracking unavailable for this candidate" : "Select candidate"}</strong>
+        <span>Candidate-specific path data is not linked in the current SAR review bundle.</span>
+      </div>
       <div className="map-legend">
         <div className="legend-item">
           <span className="legend-color" style={{ backgroundColor: "#69B7D1" }} />
@@ -288,32 +403,46 @@ export default function CandidateMap({
     </section>
   );
 
-  function handleMapClick(event: MapLayerMouseEvent) {
-    const feature = event.features?.[0];
-    const candidateId = feature?.properties?.candidateId;
-    if (typeof candidateId !== "string" || feature?.geometry.type !== "Point") return;
+}
 
-    const candidate = candidates.find((item) => item.candidateId === candidateId);
-    if (!candidate) return;
+const emptyFeatureCollection: FeatureCollection<Geometry> = {
+  type: "FeatureCollection",
+  features: [],
+};
 
-    onSelectRef.current(candidateId);
-    popupRef.current?.remove();
-    popupRef.current = new Popup({
-      closeButton: true,
-      closeOnClick: true,
-      className: "custom-map-popup",
-    })
-      .setLngLat([candidate.longitude, candidate.latitude])
-      .setHTML(
-        `<div class="map-popup-content">` +
-          `<strong>${escapeHtml(candidate.split.toUpperCase())} rank ${candidate.rank}</strong>` +
-          `<span>${escapeHtml(candidate.acquisitionDate)}</span>` +
-          `<span>${formatCoordinate(candidate.latitude)}, ${formatCoordinate(candidate.longitude)}</span>` +
-          `<span>Review Priority Score: ${formatDecimal(candidate.finalFusionScore)}</span>` +
-        `</div>`
-      )
-      .addTo(mapRef.current!);
-  }
+const REVIEW_LAYER_STYLE_ORDER = [
+  { id: "candidate-footprints", sourceId: "candidate-footprints-source", layerId: "candidate-footprints-layer", type: "fill" },
+  { id: "qeshm-hengam-priority", sourceId: "qeshm-priority-source", layerId: "qeshm-priority-layer", type: "circle" },
+  { id: "both-high", sourceId: "both-high-source", layerId: "both-high-layer", type: "circle" },
+  { id: "all-spatial-review", sourceId: "all-spatial-review-source", layerId: "all-spatial-review-layer", type: "circle" },
+  { id: "uncertain-candidates", sourceId: "uncertain-source", layerId: "uncertain-layer", type: "circle" },
+  { id: "recommended-negative", sourceId: "recommended-negative-source", layerId: "recommended-negative-layer", type: "circle" },
+] as const;
+
+function colorizeLayerCollection(
+  layer: ReviewMapLayer,
+  collection: FeatureCollection<Geometry>
+): FeatureCollection<Geometry> {
+  const color = layer.id === "uncertain-candidates"
+    ? "#D6A94A"
+    : layer.id === "recommended-negative"
+      ? "#647d87"
+    : layer.id === "candidate-footprints"
+      ? "#69B7D1"
+      : layer.id === "both-high" || layer.id === "qeshm-hengam-priority"
+        ? "#FF6B6B"
+        : "#50E3C2";
+
+  return {
+    ...collection,
+    features: collection.features.map((feature) => ({
+      ...feature,
+      properties: {
+        ...feature.properties,
+        color,
+      },
+    })),
+  };
 }
 
 function buildCandidatePatchFeatures(
@@ -374,16 +503,40 @@ function seededUnit(seed: number, salt: number): number {
   return ((value ^ (value >>> 16)) >>> 0) / 4294967295;
 }
 
-function fitMapToCandidates(map: Map, candidates: Candidate[]): void {
-  if (candidates.length === 0) return;
+function fitMapToFeatures(
+  map: Map,
+  candidateFeatures: FeatureCollection<Point>,
+  reviewCollections: FeatureCollection<Geometry>[]
+): void {
   const bounds = new LngLatBounds();
-  candidates.forEach((candidate) => bounds.extend([candidate.longitude, candidate.latitude]));
+  candidateFeatures.features.forEach((feature) => extendBounds(bounds, feature.geometry));
+  reviewCollections.forEach((collection) => {
+    collection.features.forEach((feature) => extendBounds(bounds, feature.geometry));
+  });
   if (bounds.isEmpty()) return;
   map.fitBounds(bounds, {
-    padding: { top: 100, right: 120, bottom: 100, left: 80 },
+    padding: { top: 120, right: 80, bottom: 120, left: 280 },
     maxZoom: 9.8,
-    duration: 0,
+    duration: 450,
   });
+}
+
+function extendBounds(bounds: LngLatBounds, geometry: Geometry): void {
+  if (geometry.type === "Point") {
+    bounds.extend(geometry.coordinates as [number, number]);
+    return;
+  }
+  if (geometry.type === "LineString" || geometry.type === "MultiPoint") {
+    geometry.coordinates.forEach((coordinate) => bounds.extend(coordinate as [number, number]));
+    return;
+  }
+  if (geometry.type === "Polygon" || geometry.type === "MultiLineString") {
+    geometry.coordinates.flat().forEach((coordinate) => bounds.extend(coordinate as [number, number]));
+    return;
+  }
+  if (geometry.type === "MultiPolygon") {
+    geometry.coordinates.flat(2).forEach((coordinate) => bounds.extend(coordinate as [number, number]));
+  }
 }
 
 function escapeHtml(value: string): string {

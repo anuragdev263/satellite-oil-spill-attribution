@@ -20,14 +20,12 @@ export default function SpillDetectionSummary() {
   const state = useSpillDetections();
 
   return (
-    <section className="panel-section spill-detection-summary" aria-label="Detected slick polygons">
-      <div className="panel-header compact">
-        <div>
-          <span className="panel-kicker">GIS DETECTION OUTPUT</span>
-          <h2>Detected Slick Polygons</h2>
-        </div>
+    <details className="spill-detection-summary" aria-label="Detected slick polygons">
+      <summary>
+        <span>GIS Detection Output</span>
         <ProvenanceTag level="derived" />
-      </div>
+        {state.status === "loaded" ? <strong>{formatInteger(state.stats.count)} polygons</strong> : null}
+      </summary>
 
       {state.status === "loading" ? <p>Loading detected-slick polygon file.</p> : null}
       {state.status === "empty" ? <p>No detected-slick polygons were supplied.</p> : null}
@@ -36,10 +34,6 @@ export default function SpillDetectionSummary() {
       {state.status === "loaded" ? (
         <>
           <dl className="detail-grid">
-            <div>
-              <dt>Detected polygons</dt>
-              <dd>{formatInteger(state.stats.count)}</dd>
-            </div>
             <div>
               <dt>Total detected area</dt>
               <dd>{formatDecimal(state.stats.totalDetectedAreaKm2, 2)} km&sup2;</dd>
@@ -53,14 +47,11 @@ export default function SpillDetectionSummary() {
               </dd>
             </div>
           </dl>
-          <p>
-            Each polygon&rsquo;s area is individually detected and polygons do not overlap, so the total is a true
-            sum - but it is a sum of separately detected regions, not a scientifically deduplicated &ldquo;unique
-            spill&rdquo; estimate. No attribution or confidence fields are attached to these polygons; only id and
-            area are backed by the current data contract.
-          </p>
+          <div className="compact-caveat">
+            Area is derived from separate detected regions. No attribution or confidence field is attached.
+          </div>
         </>
       ) : null}
-    </section>
+    </details>
   );
 }

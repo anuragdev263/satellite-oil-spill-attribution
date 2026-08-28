@@ -3,7 +3,6 @@ import type { Candidate } from "../types/candidates";
 import {
   formatCoordinate,
   formatDecimal,
-  formatInteger,
   formatPercentFraction,
   shortenTileName,
 } from "../utils/format";
@@ -26,7 +25,7 @@ export default function CandidateQueue({
 
   useEffect(() => {
     if (!selectedCandidateId) return;
-    rowRefs.current.get(selectedCandidateId)?.scrollIntoView({ block: "nearest" });
+    rowRefs.current.get(selectedCandidateId)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [selectedCandidateId]);
 
   return (
@@ -76,24 +75,20 @@ export default function CandidateQueue({
                   </dd>
                 </div>
                 <div>
-                  <dt>CNN Screening Score</dt>
+                  <dt>Fusion Ranking Score</dt>
+                  <dd>{formatDecimal(candidate.finalFusionScore)}</dd>
+                </div>
+                <div>
+                  <dt>CNN</dt>
                   <dd>{formatDecimal(candidate.cnnScore)}</dd>
                 </div>
                 <div>
-                  <dt>U-Net p95 Heatmap Value</dt>
+                  <dt>U-Net p95</dt>
                   <dd>{formatDecimal(candidate.unetP95Probability)}</dd>
                 </div>
                 <div>
-                  <dt>Candidate Fraction</dt>
+                  <dt>Fraction</dt>
                   <dd>{formatPercentFraction(candidate.candidateFraction)}</dd>
-                </div>
-                <div>
-                  <dt>Candidate Pixels</dt>
-                  <dd>{formatInteger(candidate.candidatePixelCount)}</dd>
-                </div>
-                <div>
-                  <dt>Fusion Ranking Score</dt>
-                  <dd>{formatDecimal(candidate.finalFusionScore)}</dd>
                 </div>
               </dl>
               <div className="candidate-row-footer">

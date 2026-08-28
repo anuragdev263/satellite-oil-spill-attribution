@@ -17,13 +17,13 @@ body,
 #root {
   margin: 0;
   width: 100%;
-  min-width: 1200px;
+  min-width: 0;
   min-height: 100%;
   background: #061014;
 }
 
 body {
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 button {

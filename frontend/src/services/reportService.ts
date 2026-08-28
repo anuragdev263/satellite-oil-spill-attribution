@@ -1,6 +1,105 @@
 import { jsPDF } from "jspdf";
 import { QESHM_INCIDENT_METADATA } from "../constants/qeshmIncident";
 import type { BacktrackingPrototypeData, SourceAttributionRecord } from "../types/backtracking";
+import type { Candidate, FusionSummary } from "../types/candidates";
+
+export function generateCandidateReviewPdf(candidate: Candidate, summary: FusionSummary | null): void {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 16;
+  const contentWidth = pageWidth - margin * 2;
+  let y = 18;
+
+  doc.setFillColor(8, 20, 25);
+  doc.rect(margin, y, contentWidth, 24, "F");
+  doc.setTextColor(80, 227, 194);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("TARANG / OILSPILL INTELLIGENCE | CANDIDATE REVIEW EXPORT", margin + 6, y + 7);
+  doc.setTextColor(216, 228, 232);
+  doc.setFontSize(13);
+  doc.text(`SAR CANDIDATE REVIEW - ${candidate.split.toUpperCase()} RANK ${candidate.rank}`, margin + 6, y + 15);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(155, 177, 186);
+  doc.text("Prototype review-support output. Not a confirmed spill or source attribution.", margin + 6, y + 20);
+  y += 30;
+
+  y = drawSectionHeader(doc, margin, y, contentWidth, "1. CANDIDATE SNAPSHOT");
+  y = drawTable(
+    doc,
+    margin,
+    y,
+    contentWidth,
+    ["FIELD", "VALUE", "PROVENANCE"],
+    [
+      ["Candidate ID", candidate.candidateId, "CSV / LOCAL REVIEW"],
+      ["Scene", candidate.scene, "SAR FUSION OUTPUT"],
+      ["Acquisition Date", candidate.acquisitionDate, "SAR FUSION OUTPUT"],
+      ["Latitude / Longitude", `${candidate.latitude.toFixed(6)}, ${candidate.longitude.toFixed(6)}`, "DERIVED TILE CENTRE"],
+      ["Split / Rank", `${candidate.split} / #${candidate.rank}`, "HELD-OUT EVALUATION DATA"],
+      ["Tile", candidate.tileName, "STATIC CSV"],
+    ],
+    [42, 94, 42]
+  );
+
+  y += 4;
+  y = drawSectionHeader(doc, margin, y, contentWidth, "2. MODEL REVIEW SCORES");
+  y = drawTable(
+    doc,
+    margin,
+    y,
+    contentWidth,
+    ["SCORE", "VALUE", "INTERPRETATION"],
+    [
+      ["Fusion Ranking Score", candidate.finalFusionScore.toFixed(3), "Raw priority score, not probability"],
+      ["CNN Screening Score", candidate.cnnScore.toFixed(3), "Tile-level model signal"],
+      ["U-Net p95 Heatmap", candidate.unetP95Probability.toFixed(3), "Pixel-level support cue"],
+      ["Candidate Pixels", candidate.candidatePixelCount.toLocaleString("en-US"), "Mask-like candidate area"],
+      ["Candidate Fraction", `${(candidate.candidateFraction * 100).toFixed(2)}%`, "Share of tile above threshold"],
+      ["U-Net Threshold", summary?.unetThreshold !== undefined ? summary.unetThreshold.toFixed(2) : "Not supplied", "RUN SUMMARY"],
+    ],
+    [50, 42, 86]
+  );
+
+  y += 4;
+  y = drawSectionHeader(doc, margin, y, contentWidth, "3. MANUAL REVIEW RECORD");
+  y = drawTable(
+    doc,
+    margin,
+    y,
+    contentWidth,
+    ["FIELD", "VALUE", "PROVENANCE"],
+    [
+      ["Review Status", candidate.review.status, "LOCAL REVIEW REPOSITORY"],
+      ["Reviewer", candidate.review.reviewerName || "Not supplied", "LOCAL REVIEW REPOSITORY"],
+      ["Updated At", candidate.review.updatedAt || "Not reviewed yet", "LOCAL REVIEW REPOSITORY"],
+    ],
+    [42, 94, 42]
+  );
+
+  y += 3;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(15, 35, 45);
+  doc.text("Reviewer Notes", margin + 2, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(50, 60, 65);
+  const notes = candidate.review.notes.trim() || "No reviewer notes recorded.";
+  const splitNotes = doc.splitTextToSize(notes, contentWidth - 4);
+  doc.text(splitNotes, margin + 2, y);
+  y += splitNotes.length * 3.8 + 6;
+
+  y = drawSectionHeader(doc, margin, y, contentWidth, "4. CAUTION AND NEXT ACTION");
+  const disclaimer =
+    "This export documents a SAR candidate review state from static prototype outputs. It supports manual triage only and does not confirm an oil spill, identify a source vessel, or establish liability. Use approved/unclear/rejected decisions as audit inputs for future training and investigation follow-up.";
+  doc.text(doc.splitTextToSize(disclaimer, contentWidth - 4), margin + 2, y);
+
+  drawFooter(doc, margin, contentWidth, "SAR CANDIDATE REVIEW | PROVENANCE: STATIC MODEL OUTPUT + LOCAL HUMAN REVIEW");
+  doc.save(`Candidate_Review_${candidate.split}_rank_${candidate.rank}_${candidate.acquisitionDate}.pdf`);
+}
 
 /**
  * Report 1: Real Incident Review PDF
@@ -312,8 +411,6 @@ export function generatePrototypeAnalysisPdf(
   doc.setTextColor(50, 60, 65);
   const splitDisclaimer = doc.splitTextToSize(disclaimerText, contentWidth - 4);
   doc.text(splitDisclaimer, margin + 2, y);
-  y += splitDisclaimer.length * 3.8 + 6;
-
   // --- FOOTER ---
   drawFooter(doc, margin, contentWidth, "PROTOTYPE SOURCE ATTRIBUTION ANALYSIS  |  DATA PROVENANCE: PROTOTYPE / DERIVED DATA");
 

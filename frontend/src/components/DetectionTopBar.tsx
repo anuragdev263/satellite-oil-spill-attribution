@@ -1,5 +1,5 @@
-import { QESHM_INCIDENT_METADATA } from "../constants/qeshmIncident";
 import type { CandidateFilters, FusionSummary } from "../types/candidates";
+import { QESHM_INCIDENT_METADATA } from "../constants/qeshmIncident";
 import ModeBadge from "./ModeBadge";
 
 type DetectionTopBarProps = {
@@ -10,13 +10,13 @@ type DetectionTopBarProps = {
 };
 
 const PIPELINE_STAGES = [
-  { id: "sar", label: "SAR DETECTION", activeIn: ["detection"] },
-  { id: "spill", label: "SPILL REGION", activeIn: ["detection", "attribution"] },
-  { id: "backtrack", label: "BACKTRACK", activeIn: ["attribution"] },
-  { id: "vessel", label: "VESSEL TRACK", activeIn: ["attribution"] },
-  { id: "fusion", label: "EVIDENCE FUSION", activeIn: ["detection", "attribution"] },
-  { id: "attribution", label: "SOURCE ATTRIBUTION", activeIn: ["attribution"] },
-  { id: "review", label: "INVESTIGATOR REVIEW", activeIn: ["detection", "attribution"] },
+  { id: "sar", label: "SAR", activeIn: ["detection"] },
+  { id: "fusion", label: "FUSION", activeIn: ["detection"] },
+  { id: "review", label: "MANUAL REVIEW", activeIn: ["detection"] },
+  { id: "backtrack", label: "BACKTRACK DEMO", activeIn: ["attribution"] },
+  { id: "vessel", label: "VESSEL DEMO", activeIn: ["attribution"] },
+  { id: "scenario", label: "SCENARIO SCORE", activeIn: ["attribution"] },
+  { id: "report", label: "REPORT", activeIn: ["detection", "attribution"] },
 ];
 
 export default function DetectionTopBar({
@@ -25,7 +25,7 @@ export default function DetectionTopBar({
   mode,
   onModeChange,
 }: DetectionTopBarProps) {
-  const isSourceAnalysis = mode === "attribution";
+  const isAttributionMode = mode === "attribution";
 
   return (
     <header className="topbar-container">
@@ -35,7 +35,7 @@ export default function DetectionTopBar({
           <div>
             <div className="brand-name">OILSPILL INTELLIGENCE</div>
             <div className="brand-subtitle">
-              {isSourceAnalysis ? "DRIFT PROJECTION / SOURCE ANALYSIS" : "SAR CANDIDATE SLICK REVIEW"}
+              {isAttributionMode ? "PROTOTYPE / SYNTHETIC ATTRIBUTION DEMO" : "SAR CANDIDATE SLICK REVIEW"}
             </div>
           </div>
         </div>
@@ -52,6 +52,7 @@ export default function DetectionTopBar({
             className={mode === "attribution" ? "active" : ""}
             type="button"
             onClick={() => onModeChange("attribution")}
+            title="Synthetic concept demo. Not confirmed attribution and not linked to every SAR candidate."
           >
             Source Attribution
           </button>
@@ -59,32 +60,33 @@ export default function DetectionTopBar({
 
         <div className="case-info">
           <div>
-            <span>PIPELINE FOCUS</span>
-            <strong>{isSourceAnalysis ? "Backtracking Simulation" : "CNN + U-Net Fusion Queue"}</strong>
+            <span>FOCUS</span>
+            <strong>{isAttributionMode ? "Prototype Scenario" : "CNN + U-Net Queue"}</strong>
           </div>
           <div>
-            <span>CASE CONTEXT</span>
-            <strong>{isSourceAnalysis ? QESHM_INCIDENT_METADATA.caseId : filters.split === "all" ? "All Held-Out" : filters.split}</strong>
+            <span>CONTEXT</span>
+            <strong>{isAttributionMode ? QESHM_INCIDENT_METADATA.caseId : filters.split === "all" ? "All Held-Out" : filters.split}</strong>
           </div>
           <div>
             <span>OBSERVATION</span>
-            <strong>{isSourceAnalysis ? QESHM_INCIDENT_METADATA.observationDate : summary?.createdAt ?? "Not supplied"}</strong>
+            <strong>{isAttributionMode ? QESHM_INCIDENT_METADATA.observationDate : summary?.createdAt ?? "Not supplied"}</strong>
           </div>
         </div>
 
         <div className="topbar-badges">
-          {isSourceAnalysis ? (
+          {isAttributionMode ? (
             <>
-              <ModeBadge tone="human">Reported Incident</ModeBadge>
-              <ModeBadge tone="model">Source Analysis</ModeBadge>
-              <ModeBadge tone="warning">Prototype Run</ModeBadge>
+              <ModeBadge tone="warning">Prototype / Synthetic</ModeBadge>
+              <ModeBadge tone="model">Scenario Score</ModeBadge>
+              <ModeBadge tone="warning">Not confirmed attribution</ModeBadge>
+              <ModeBadge tone="synthetic">Not linked to SAR candidates</ModeBadge>
             </>
           ) : (
             <>
               <ModeBadge tone={summary?.groupedSplitOnly ? "observed" : "warning"}>
                 {summary?.groupedSplitOnly ? "Grouped Split" : "Split Not Supplied"}
               </ModeBadge>
-              <ModeBadge tone="warning">Experimental Prototype</ModeBadge>
+              <ModeBadge tone="warning">Prototype</ModeBadge>
             </>
           )}
         </div>
@@ -98,7 +100,7 @@ export default function DetectionTopBar({
             const isActive = stage.activeIn.includes(mode);
             const isCurrentModeTarget =
               (mode === "detection" && (stage.id === "sar" || stage.id === "fusion")) ||
-              (mode === "attribution" && (stage.id === "backtrack" || stage.id === "attribution"));
+              (mode === "attribution" && (stage.id === "backtrack" || stage.id === "scenario"));
 
             return (
               <div
