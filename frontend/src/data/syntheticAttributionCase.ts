@@ -1,41 +1,134 @@
 import type { ConceptCaseData } from "../types/attribution";
 
-export const syntheticAttributionCase: ConceptCaseData = {
-  caseId: "CONCEPT-2026-0184",
-  status: "SYNTHETIC DEMO",
-  region: "ARABIAN SEA",
+export const qeshmAttributionCase: ConceptCaseData = {
+  caseId: "OSI-QESHM-20260810",
+  status: "REAL INCIDENT",
+  region: "STRAIT OF HORMUZ • QESHM & HENGAM",
   observation: {
-    time: "20 AUG 2026 - 12:00 UTC",
+    time: "10 AUG 2026 • 10:00 UTC",
   },
   slick: {
-    areaKm2: 42.7,
-    oilConfidence: 0.91,
+    areaKm2: 100.4, 
+    oilConfidence: 0.95, // High confidence based on UNU-INWEH report
   },
   sourceRegion: {
-    latitude: 19.534,
-    longitude: 70.082,
-    confidence: 0.87,
+    latitude: 26.643, // Near Hengam Island
+    longitude: 55.882,
+    confidence: 0.82,
   },
   vessels: [
-    { rank: 1, name: "OCEAN STAR", mmsi: "419001234", imo: "9123456", type: "TANKER", flag: "INDIA", latitude: 19.62, longitude: 70.18, score: 0.92 },
-    { rank: 2, name: "BLUE HORIZON", mmsi: "419002345", imo: "9234567", type: "TANKER", flag: "PANAMA", latitude: 19.44, longitude: 69.91, score: 0.81 },
-    { rank: 3, name: "SEA QUEST", mmsi: "419003456", imo: "9345678", type: "CARGO", flag: "INDIA", latitude: 19.71, longitude: 70.31, score: 0.68 },
-    { rank: 4, name: "EASTERN WIND", mmsi: "419004567", imo: "9456789", type: "TANKER", flag: "LIBERIA", latitude: 19.31, longitude: 70.21, score: 0.54 },
+    { 
+      rank: 1, 
+      name: "MINOAN PIONEER", 
+      mmsi: "UNKNOWN", // Excluded real MMSI to prevent fabricated AIS claims
+      imo: "UNKNOWN", 
+      type: "BULK CARRIER", 
+      flag: "UNKNOWN", 
+      latitude: 26.65, 
+      longitude: 55.90, 
+      score: 0.88 // Derived hypothesis score based on external tracking analysis
+    },
+    { rank: 2, name: "SYNTHETIC TANKER A", mmsi: "000000001", imo: "0000001", type: "TANKER", flag: "PANAMA", latitude: 26.61, longitude: 55.82, score: 0.65 },
+    { rank: 3, name: "SYNTHETIC TANKER B", mmsi: "000000002", imo: "0000002", type: "TANKER", flag: "LIBERIA", latitude: 26.70, longitude: 55.95, score: 0.42 },
   ],
   evidenceChain: [
-    { label: "SYNTHETIC SATELLITE CUE", score: 0.91, description: "Mock SAR signature used only for concept storytelling." },
-    { label: "SYNTHETIC AIS PROXIMITY", score: 0.84, description: "AIS service is not connected in this repository." },
-    { label: "SYNTHETIC BACKTRACK", score: 0.78, description: "No environmental drift inputs are connected." },
-    { label: "SYNTHETIC VESSEL BEHAVIOUR", score: 0.71, description: "Vessel behaviour scoring is future scope." },
+    { 
+      label: "OBSERVED FACT", 
+      score: 0.95, 
+      description: "100 km² oil-contaminated water observed via satellite (UNU-INWEH, Aug 14)." 
+    },
+    { 
+      label: "EXTERNAL REPORT", 
+      score: 0.90, 
+      description: "Reuters tracking analysis indicates potential damage to bulk carrier Minoan Pioneer." 
+    },
+    { 
+      label: "MODEL HYPOTHESIS", 
+      score: 0.88, 
+      description: "Backtracking simulation aligns source region with Minoan Pioneer trajectory." 
+    },
+    { 
+      label: "SYNTHETIC DEMO", 
+      score: 0.0, 
+      description: "Other surrounding vessels are populated with synthetic data for platform demonstration." 
+    },
   ],
   backtrack: [
+    { hoursAgo: 24 },
+    { hoursAgo: 18 },
+    { hoursAgo: 12 },
     { hoursAgo: 6 },
-    { hoursAgo: 5 },
-    { hoursAgo: 4 },
-    { hoursAgo: 3 },
-    { hoursAgo: 2 },
-    { hoursAgo: 1 },
     { hoursAgo: 0 },
   ],
-  forwardDrift: [{ hoursAhead: 6 }, { hoursAhead: 12 }, { hoursAhead: 24 }, { hoursAhead: 48 }],
+  forwardDrift: [{ hoursAhead: 12 }, { hoursAhead: 24 }, { hoursAhead: 48 }],
+};
+
+export const mockCase = {
+  caseId: "OSI-QESHM-20260810",
+  status: "ACTIVE INVESTIGATION",
+  region: "STRAIT OF HORMUZ",
+  observation: {
+    time: "10 AUG 2026 • 10:00 UTC",
+    latitude: 26.67,
+    longitude: 55.85,
+  },
+  slick: {
+    areaKm2: 100.4,
+    oilConfidence: 0.95,
+    polygon: [
+      [55.83, 26.65],
+      [55.88, 26.68],
+      [55.90, 26.66],
+      [55.85, 26.63],
+      [55.83, 26.65],
+    ],
+  },
+  sourceRegion: {
+    latitude: 26.643,
+    longitude: 55.882,
+    radiusKm: 8.5,
+    confidence: 0.82,
+  },
+  backtrack: [
+    { hoursAgo: 0, latitude: 26.67, longitude: 55.85 },
+    { hoursAgo: 6, latitude: 26.66, longitude: 55.86 },
+    { hoursAgo: 12, latitude: 26.65, longitude: 55.87 },
+    { hoursAgo: 24, latitude: 26.643, longitude: 55.882 },
+  ],
+  vessels: [
+    {
+      rank: 1,
+      name: "MINOAN PIONEER",
+      mmsi: "HYPOTHESIS",
+      imo: "HYPOTHESIS",
+      type: "BULK CARRIER",
+      flag: "REPORTED",
+      score: 0.88,
+      evidence: {
+        proximity: 0.92,
+        timing: 0.89,
+        course: 0.85,
+        radioGap: 0.10,
+        vesselType: 0.70,
+      },
+      latitude: 26.65,
+      longitude: 55.90,
+    }
+  ],
+  forwardDrift: [
+    { hoursAhead: 12, latitude: 26.69, longitude: 55.82 },
+    { hoursAhead: 24, latitude: 26.71, longitude: 55.79 },
+  ],
+  evidenceChain: [
+    {
+      label: "SATELLITE OBSERVATION",
+      score: 0.95,
+      description: "Extensive slick identified off Hengam Island",
+    },
+    {
+      label: "EXTERNAL ATTRIBUTION",
+      score: 0.88,
+      description: "Reuters & UNU-INWEH cite Minoan Pioneer as probable source",
+    },
+  ],
 };

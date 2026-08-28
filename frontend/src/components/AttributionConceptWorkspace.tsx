@@ -16,6 +16,7 @@ export default function AttributionConceptWorkspace({
 }: AttributionConceptWorkspaceProps) {
   const loadState = useBacktrackingData();
   const [selectedVesselId, setSelectedVesselId] = useState<string | null>(null);
+  const [timeIndex, setTimeIndex] = useState(0);
 
   const topBarFilters = {
     split: "test" as const,
@@ -59,11 +60,14 @@ export default function AttributionConceptWorkspace({
           data={data}
           selectedVesselId={selectedVesselId}
           onSelectVessel={setSelectedVesselId}
+          timeIndex={timeIndex}
+          onTimeIndexChange={setTimeIndex}
         />
         <SourceAttributionPanel
           data={data}
           selectedVesselId={selectedVesselId}
           onSelectVessel={setSelectedVesselId}
+          timeIndex={timeIndex}
         />
       </main>
     </div>

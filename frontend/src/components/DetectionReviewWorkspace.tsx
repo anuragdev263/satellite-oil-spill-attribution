@@ -9,6 +9,7 @@ import DetectionTopBar from "./DetectionTopBar";
 import EvaluationPanel from "./EvaluationPanel";
 import ModeBadge from "./ModeBadge";
 import RunInformationDrawer from "./RunInformationDrawer";
+import SpillDetectionSummary from "./SpillDetectionSummary";
 import { validateImportedReviews } from "../services/reviewRepository";
 import { DEFAULT_FILTERS } from "../constants/candidateFilters";
 import type { Candidate, CandidateFilters, CandidateReview, DataLoadState } from "../types/candidates";
@@ -218,6 +219,7 @@ function ReadyWorkspace({
 
         {importError ? <div className="inline-error">{importError}</div> : null}
         {evaluationMode ? <EvaluationPanel candidates={run.candidates} /> : null}
+        <SpillDetectionSummary />
 
         <section className="review-grid">
           <div className="queue-column">
