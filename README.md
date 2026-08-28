@@ -1,119 +1,117 @@
 # 🛢️ OilSpill Intelligence
 
-### Satellite + AIS Based Oil Spill Detection, Source Attribution & Drift Intelligence
+### Satellite + AIS-Based Oil Spill Detection, Backtracking, Source Attribution & Drift Intelligence
 
-OilSpill Intelligence is a geospatial maritime intelligence platform designed to help investigators detect oil spills, identify probable source vessels, reconstruct historical vessel movement, estimate spill origin, and simulate possible spill scenarios.
+**OilSpill Intelligence** is a geospatial maritime investigation platform designed to support the detection, reconstruction, and source-attribution analysis of marine oil pollution events.
 
-The platform combines:
+The platform brings together satellite/SAR detection, vessel-track analysis, temporal backtracking, environmental transport modelling, evidence fusion, and investigator review into a single interactive workflow.
 
-- 🛰️ Satellite/SAR-derived oil spill detection
-- 🚢 AIS vessel tracking
-- 🗺️ GIS-based spatial analysis
-- ⏱️ Temporal backtracking
-- 🌊 Forward drift modelling
-- 🧠 Evidence-based vessel attribution
-- 🤖 ML-assisted source attribution
-- 🎯 What-If scenario simulation
+The current prototype uses the **Qeshm / Hengam oil pollution event reported in August 2026 as its real-world incident context**, while clearly separating externally reported facts from prototype/synthetic analysis data.
 
-The goal is to transform fragmented satellite and maritime data into an explainable investigation workflow.
+> ⚠️ **Important:** The current backtracking, vessel-track, environmental, and attribution analysis is a prototype demonstration. It does **not** independently confirm the real-world source of the Qeshm/Hengam pollution event.
 
 ---
 
-## 🚨 Problem
+## 🚨 Qeshm / Hengam Incident Context
 
-Oil spills at sea are difficult to attribute to their actual source.
+The application includes the reported **Qeshm / Hengam oil pollution event** as its primary incident context.
 
-Investigators may have access to:
+| Incident Information | Status |
+|---|---|
+| **Case** | Qeshm / Hengam |
+| **Observation** | 10 August 2026 |
+| **Reported extent** | ~100 km² |
+| **Source status** | Under Investigation |
+| **External attribution** | Minoan Pioneer — reported likely source |
+| **System confirmation** | Not established |
 
-- Satellite imagery
-- AIS vessel positions
-- Historical vessel tracks
-- Wind/current information
-- Vessel characteristics
-- Spill geometry
+The application deliberately distinguishes the real-world incident context from the prototype analytical scenario.
 
-However, these datasets are often analyzed separately.
+### Data provenance
 
-This creates several challenges:
+Every displayed value is classified as one of:
 
-1. Detecting an oil slick from satellite imagery.
-2. Determining where the spill most likely originated.
-3. Identifying vessels that were present near the probable source.
-4. Reconstructing vessel movement before the spill was detected.
-5. Accounting for ocean drift and environmental conditions.
-6. Ranking candidate vessels using multiple evidence sources.
-7. Explaining why one vessel is more likely than another.
+- **EXTERNAL / REPORTED** — information supported by external reporting.
+- **DERIVED** — calculated by the application from available source data.
+- **PROTOTYPE / SYNTHETIC** — simulated or demonstration data.
+- **UNKNOWN** — information that cannot be established from the available data.
 
-OilSpill Intelligence addresses these challenges through a unified geospatial investigation interface.
+This distinction is maintained throughout the interface and generated reports.
 
 ---
 
 # 🎯 Objectives
 
-The system is designed to:
+OilSpill Intelligence is designed to provide an explainable investigation pipeline for marine oil-spill attribution.
 
-- Detect and visualize oil spill regions.
-- Estimate probable spill source locations.
-- Visualize nearby AIS vessels.
-- Rank candidate vessels by attribution confidence.
+The system aims to:
+
+- Detect and visualize potential oil-spill regions.
+- Identify candidate spill/source locations.
 - Reconstruct historical vessel movement.
-- Analyze temporal consistency between vessels and spills.
-- Model potential oil drift.
-- Provide an interactive What-If simulator.
-- Combine multiple evidence sources into an explainable confidence chain.
-- Eventually use machine learning to improve attribution accuracy.
+- Perform temporal backtracking.
+- Analyse vessel-to-source spatial relationships.
+- Evaluate temporal consistency between vessels and spill events.
+- Incorporate wind/current transport information.
+- Generate forward drift projections where sufficient data exists.
+- Rank candidate vessels using multiple evidence dimensions.
+- Explain why a candidate ranks highly or poorly.
+- Preserve data provenance throughout the investigation.
+- Support investigator review and auditability.
+- Provide professional incident and analysis reports.
 
 ---
 
-# 🧩 System Overview
+# 🧩 Investigation Workflow
+
+The current application represents the investigation pipeline as:
 
 ```text
-                  DATA SOURCES
-                       │
-        ┌──────────────┼──────────────┐
-        │              │              │
-        ▼              ▼              ▼
-   Satellite/SAR      AIS        Wind/Ocean Data
-        │              │              │
-        └──────────────┼──────────────┘
-                       ▼
-                GIS PROCESSING
-                       │
-          ┌────────────┴────────────┐
-          │                         │
-          ▼                         ▼
-   Spill Detection            Vessel Tracks
-          │                         │
-          └────────────┬────────────┘
-                       ▼
-               SOURCE ESTIMATION
-                       │
-                       ▼
-              TEMPORAL BACKTRACK
-                       │
-                       ▼
-              DRIFT RECONSTRUCTION
-                       │
-                       ▼
-              EVIDENCE ENGINE
-                       │
-          ┌────────────┼────────────┐
-          │            │            │
-          ▼            ▼            ▼
-       Satellite      AIS       Behaviour
-       Signature    Proximity    Analysis
-          │            │            │
-          └────────────┼────────────┘
-                       ▼
-                ATTRIBUTION MODEL
-                       │
-                       ▼
-               RANKED VESSELS
-                       │
-                       ▼
-             INVESTIGATION UI
-                       │
-          ┌────────────┼────────────┐
-          ▼            ▼            ▼
-       Timeline     What-If      Evidence
-       Analysis    Simulator      Chain
+┌───────────────────────────┐
+│   SATELLITE / SAR DATA    │
+└─────────────┬─────────────┘
+              ↓
+┌───────────────────────────┐
+│     SPILL DETECTION       │
+└─────────────┬─────────────┘
+              ↓
+┌───────────────────────────┐
+│      SPILL LOCATION       │
+└─────────────┬─────────────┘
+              ↓
+┌───────────────────────────┐
+│ PROBABILITY / BACKTRACKING │
+└─────────────┬─────────────┘
+              ↓
+┌───────────────────────────┐
+│   HISTORICAL VESSEL AIS   │
+│         TRACKS             │
+└─────────────┬─────────────┘
+              ↓
+┌───────────────────────────┐
+│     CANDIDATE VESSELS     │
+└─────────────┬─────────────┘
+              ↓
+┌───────────────────────────┐
+│     SPATIAL EVIDENCE      │
+└─────────────┬─────────────┘
+              ↓
+┌───────────────────────────┐
+│     TEMPORAL EVIDENCE     │
+└─────────────┬─────────────┘
+              ↓
+┌───────────────────────────┐
+│ ENVIRONMENTAL / DRIFT DATA│
+└─────────────┬─────────────┘
+              ↓
+┌───────────────────────────┐
+│      EVIDENCE FUSION      │
+└─────────────┬─────────────┘
+              ↓
+┌───────────────────────────┐
+│     SOURCE ATTRIBUTION    │
+└─────────────┬─────────────┘
+              ↓
+┌───────────────────────────┐
+│   INVESTIGATOR REVIEW     │
+└───────────────────────────┘
