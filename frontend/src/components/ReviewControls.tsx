@@ -30,20 +30,20 @@ export default function ReviewControls({ review, onChange }: ReviewControlsProps
           ))}
         </select>
       </label>
+      <label className="notes-field">
+        <span>Written review comment</span>
+        <textarea
+          value={review.notes}
+          onChange={(event) => patch({ notes: event.target.value })}
+          placeholder="Add visual observations, uncertainty, or follow-up action."
+        />
+      </label>
       <label>
         <span>Reviewer name (optional)</span>
         <input
           value={review.reviewerName ?? ""}
           onChange={(event) => patch({ reviewerName: event.target.value })}
           placeholder="Reviewer"
-        />
-      </label>
-      <label className="notes-field">
-        <span>Reviewer notes</span>
-        <textarea
-          value={review.notes}
-          onChange={(event) => patch({ notes: event.target.value })}
-          placeholder="Record visual observations and uncertainty."
         />
       </label>
       <div className="review-updated">

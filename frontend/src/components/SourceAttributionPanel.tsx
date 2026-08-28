@@ -67,11 +67,11 @@ export default function SourceAttributionPanel({
 
   return (
     <aside className="right-panel source-panel">
-      {/* REAL INCIDENT CONTEXT (External Reported - High-Impact Improvement #4) */}
+      {/* Reported context only; source attribution below remains a synthetic prototype demo. */}
       <section className="panel-section incident-context-section">
         <div className="panel-header compact">
           <div>
-            <span className="panel-kicker">REAL INCIDENT CONTEXT</span>
+            <span className="panel-kicker">REPORTED INCIDENT CONTEXT</span>
             <h2>{QESHM_INCIDENT_METADATA.name}</h2>
           </div>
           <ProvenanceTag level="reported" />
@@ -107,7 +107,8 @@ export default function SourceAttributionPanel({
           </div>
         </dl>
         <div className="incident-attribution-note">
-          <strong>External Report Note:</strong> {QESHM_INCIDENT_METADATA.externalAttributionHypothesis.summary}
+          <strong>External report note:</strong> {QESHM_INCIDENT_METADATA.externalAttributionHypothesis.summary}
+          <span className="provenance-micro"> NOT CONFIRMED BY THIS PROTOTYPE</span>
         </div>
 
         {/* PRIMARY REPORT 1 BUTTON: GENERATE INCIDENT REVIEW PDF */}
@@ -135,8 +136,9 @@ export default function SourceAttributionPanel({
       {/* PROTOTYPE DISCLAIMERS */}
       <section className="panel-section prototype-disclaimer-section">
         <span className="panel-kicker">PROTOTYPE STATUS</span>
-        <h2>Simulation & Vector Context</h2>
+        <h2>Synthetic Scenario Only</h2>
         <ul className="disclaimer-list">
+          <li>Not confirmed attribution and not linked to every SAR candidate.</li>
           <li>{QESHM_INCIDENT_METADATA.disclaimers.aisStatus}</li>
           <li>{QESHM_INCIDENT_METADATA.disclaimers.driftStatus}</li>
           <li>{QESHM_INCIDENT_METADATA.disclaimers.scoreExplanation}</li>
@@ -333,10 +335,10 @@ function SelectedAttributionDetails({
     <section className="panel-section">
       <div className="panel-header compact">
         <div>
-          <span className="panel-kicker">SELECTED CANDIDATE EVIDENCE</span>
+          <span className="panel-kicker">SCENARIO CANDIDATE EVIDENCE</span>
           <h2>{record.vesselId}</h2>
         </div>
-        <ProvenanceTag level="derived" />
+        <ProvenanceTag level="prototype" />
       </div>
 
       {/* COMPACT EVIDENCE BREAKDOWN (High-Impact Improvement #2) */}
@@ -427,7 +429,7 @@ function SelectedAttributionDetails({
 
       <div className="attribution-rationale-box">
         <strong className="rationale-header">
-          ATTRIBUTION RATIONALE (SCENARIO EVIDENCE)
+          SCENARIO RATIONALE (NOT CONFIRMED ATTRIBUTION)
         </strong>
         <p className="rationale-text">
           {describeAttributionRationale(record)}
