@@ -30,6 +30,11 @@ type DetectionReviewWorkspaceProps = {
   onModeChange: (mode: "detection" | "attribution") => void;
 };
 
+const CANDIDATE_QUEUE_MIN_HEIGHT = 260;
+const FILTER_SECTION_MIN_HEIGHT = 220;
+const SIDEBAR_DIVIDER_HEIGHT = 18;
+const KEYBOARD_RESIZE_STEP = 28;
+
 export default function DetectionReviewWorkspace({
   mode,
   onModeChange,
@@ -170,6 +175,12 @@ function ReadyWorkspace({
   onModeChange,
 }: ReadyWorkspaceProps) {
   const run = dataState.run;
+  const queueColumnRef = useRef<HTMLDivElement | null>(null);
+  const [candidateRegionHeight, setCandidateRegionHeight] = useState(() => {
+    const savedHeight = sessionStorage.getItem("candidate-region-panel-height");
+    const parsedHeight = savedHeight ? Number(savedHeight) : Number.NaN;
+    return Number.isFinite(parsedHeight) ? parsedHeight : 390;
+  });
   const workspaceFilters = useMemo(
     () => ({
       ...filters,
@@ -229,6 +240,50 @@ function ReadyWorkspace({
     } finally {
       if (importRef.current) importRef.current.value = "";
     }
+  };
+
+  const clampCandidateRegionHeight = (height: number) => {
+    const columnHeight = queueColumnRef.current?.getBoundingClientRect().height ?? 720;
+    const maxQueueHeight = Math.max(
+      CANDIDATE_QUEUE_MIN_HEIGHT,
+      columnHeight - FILTER_SECTION_MIN_HEIGHT - SIDEBAR_DIVIDER_HEIGHT
+    );
+    return Math.min(Math.max(height, CANDIDATE_QUEUE_MIN_HEIGHT), maxQueueHeight);
+  };
+
+  const updateCandidateRegionHeight = (height: number) => {
+    const nextHeight = clampCandidateRegionHeight(height);
+    setCandidateRegionHeight(nextHeight);
+    sessionStorage.setItem("candidate-region-panel-height", String(Math.round(nextHeight)));
+  };
+
+  const handleResizeStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const startY = event.clientY;
+    const startHeight = candidateRegionHeight;
+    document.body.classList.add("is-resizing-sidebar");
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      updateCandidateRegionHeight(startHeight + startY - moveEvent.clientY);
+    };
+
+    const handlePointerEnd = () => {
+      document.body.classList.remove("is-resizing-sidebar");
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerEnd);
+      window.removeEventListener("pointercancel", handlePointerEnd);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerEnd);
+    window.addEventListener("pointercancel", handlePointerEnd);
+  };
+
+  const handleResizeKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+    const direction = event.key === "ArrowUp" ? 1 : -1;
+    updateCandidateRegionHeight(candidateRegionHeight + direction * KEYBOARD_RESIZE_STEP);
   };
 
   return (
@@ -304,14 +359,31 @@ function ReadyWorkspace({
         </div>
 
         <section className="review-grid">
-          <div className="queue-column">
-            <CandidateFiltersPanel candidates={run.candidates} filters={filters} onChange={setFilters} />
-            <CandidateQueue
-              candidates={filteredCandidates}
-              selectedCandidateId={selectedCandidate?.candidateId ?? null}
-              evaluationMode={evaluationMode}
-              onSelect={setSelectedCandidateId}
-            />
+          <div className="queue-column" ref={queueColumnRef}>
+            <div className="filter-region-shell">
+              <CandidateFiltersPanel candidates={run.candidates} filters={filters} onChange={setFilters} />
+            </div>
+            <div
+              className="sidebar-resize-divider"
+              role="separator"
+              aria-orientation="horizontal"
+              aria-label="Resize candidate queue"
+              aria-valuemin={CANDIDATE_QUEUE_MIN_HEIGHT}
+              aria-valuenow={Math.round(candidateRegionHeight)}
+              tabIndex={0}
+              onPointerDown={handleResizeStart}
+              onKeyDown={handleResizeKeyDown}
+            >
+              <span />
+            </div>
+            <div className="candidate-region-shell" style={{ flexBasis: `${candidateRegionHeight}px` }}>
+              <CandidateQueue
+                candidates={filteredCandidates}
+                selectedCandidateId={selectedCandidate?.candidateId ?? null}
+                evaluationMode={evaluationMode}
+                onSelect={setSelectedCandidateId}
+              />
+            </div>
           </div>
 
           <CandidateMap
